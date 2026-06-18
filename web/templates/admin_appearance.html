@@ -1,0 +1,164 @@
+﻿{{define "admin_appearance"}}
+<!doctype html>
+<html lang="zh-CN">
+{{template "admin_head" .}}
+<body class="admin">
+    {{template "admin_nav" .}}
+    {{$siteBg := index .Settings "site_background"}}
+    {{$adminBg := index .Settings "admin_background"}}
+    <main class="admin-main">
+        <div class="admin-header">
+            <div>
+                <h1>外观设置</h1>
+                <p class="muted">选择前台和后台背景。支持纯色、渐变、内置图片，也支持本地上传图片。</p>
+            </div>
+        </div>
+
+        {{if .Flash}}
+        <div class="flash">{{.Flash}}</div>
+        {{end}}
+
+        <section class="admin-card">
+            <form class="admin-form" method="post" action="/admin/appearance">
+                <fieldset class="bg-fieldset">
+                    <legend>前台背景</legend>
+
+                    <h4 class="bg-group-title">纯色</h4>
+                    <div class="bg-grid">
+                        <label class="bg-option">
+                            <input type="radio" name="site_background" value="#f6f0e6" {{if or (eq $siteBg "") (eq $siteBg "#f6f0e6")}}checked{{end}}>
+                            <span class="bg-shell"><span class="bg-preview" style="background: #f6f0e6;"></span><span class="bg-name">米白</span></span>
+                        </label>
+                        <label class="bg-option">
+                            <input type="radio" name="site_background" value="#eaf4f1" {{if eq $siteBg "#eaf4f1"}}checked{{end}}>
+                            <span class="bg-shell"><span class="bg-preview" style="background: #eaf4f1;"></span><span class="bg-name">浅青</span></span>
+                        </label>
+                        <label class="bg-option">
+                            <input type="radio" name="site_background" value="#f3eef8" {{if eq $siteBg "#f3eef8"}}checked{{end}}>
+                            <span class="bg-shell"><span class="bg-preview" style="background: #f3eef8;"></span><span class="bg-name">浅紫</span></span>
+                        </label>
+                    </div>
+
+                    <h4 class="bg-group-title">渐变</h4>
+                    <div class="bg-grid">
+                        <label class="bg-option">
+                            <input type="radio" name="site_background" value="linear-gradient(135deg, #fbe8cc, #e4d0b0)" {{if eq $siteBg "linear-gradient(135deg, #fbe8cc, #e4d0b0)"}}checked{{end}}>
+                            <span class="bg-shell"><span class="bg-preview" style="background: linear-gradient(135deg, #fbe8cc, #e4d0b0);"></span><span class="bg-name">暖杏渐变</span></span>
+                        </label>
+                        <label class="bg-option">
+                            <input type="radio" name="site_background" value="linear-gradient(135deg, #dff3ee, #c3e1d8)" {{if eq $siteBg "linear-gradient(135deg, #dff3ee, #c3e1d8)"}}checked{{end}}>
+                            <span class="bg-shell"><span class="bg-preview" style="background: linear-gradient(135deg, #dff3ee, #c3e1d8);"></span><span class="bg-name">青绿渐变</span></span>
+                        </label>
+                        <label class="bg-option">
+                            <input type="radio" name="site_background" value="linear-gradient(135deg, #e7ecff, #d4daf5)" {{if eq $siteBg "linear-gradient(135deg, #e7ecff, #d4daf5)"}}checked{{end}}>
+                            <span class="bg-shell"><span class="bg-preview" style="background: linear-gradient(135deg, #e7ecff, #d4daf5);"></span><span class="bg-name">云蓝渐变</span></span>
+                        </label>
+                    </div>
+
+                    <h4 class="bg-group-title">内置图片</h4>
+                    <div class="bg-grid">
+                        <label class="bg-option">
+                            <input type="radio" name="site_background" value="url('/static/img/paper-bg.svg') center top / cover no-repeat fixed" {{if eq $siteBg "url('/static/img/paper-bg.svg') center top / cover no-repeat fixed"}}checked{{end}}>
+                            <span class="bg-shell"><span class="bg-preview" style="background: url('/static/img/paper-bg.svg') center / cover no-repeat;"></span><span class="bg-name">纸纹</span></span>
+                        </label>
+                        <label class="bg-option">
+                            <input type="radio" name="site_background" value="url('/static/img/hero-bg.svg') center / cover no-repeat fixed" {{if eq $siteBg "url('/static/img/hero-bg.svg') center / cover no-repeat fixed"}}checked{{end}}>
+                            <span class="bg-shell"><span class="bg-preview" style="background: url('/static/img/hero-bg.svg') center / cover no-repeat;"></span><span class="bg-name">星云</span></span>
+                        </label>
+                        <label class="bg-option">
+                            <input type="radio" name="site_background" value="url('/static/img/cover-1.svg') center / cover no-repeat fixed" {{if eq $siteBg "url('/static/img/cover-1.svg') center / cover no-repeat fixed"}}checked{{end}}>
+                            <span class="bg-shell"><span class="bg-preview" style="background: url('/static/img/cover-1.svg') center / cover no-repeat;"></span><span class="bg-name">插画</span></span>
+                        </label>
+                    </div>
+                </fieldset>
+
+                <fieldset class="bg-fieldset">
+                    <legend>后台背景</legend>
+
+                    <h4 class="bg-group-title">纯色</h4>
+                    <div class="bg-grid">
+                        <label class="bg-option">
+                            <input type="radio" name="admin_background" value="#f5f7f6" {{if or (eq $adminBg "") (eq $adminBg "#f5f7f6")}}checked{{end}}>
+                            <span class="bg-shell"><span class="bg-preview" style="background: #f5f7f6;"></span><span class="bg-name">雾白</span></span>
+                        </label>
+                        <label class="bg-option">
+                            <input type="radio" name="admin_background" value="#f3f4f8" {{if eq $adminBg "#f3f4f8"}}checked{{end}}>
+                            <span class="bg-shell"><span class="bg-preview" style="background: #f3f4f8;"></span><span class="bg-name">云灰</span></span>
+                        </label>
+                        <label class="bg-option">
+                            <input type="radio" name="admin_background" value="#f7f3ec" {{if eq $adminBg "#f7f3ec"}}checked{{end}}>
+                            <span class="bg-shell"><span class="bg-preview" style="background: #f7f3ec;"></span><span class="bg-name">暖米</span></span>
+                        </label>
+                    </div>
+
+                    <h4 class="bg-group-title">渐变</h4>
+                    <div class="bg-grid">
+                        <label class="bg-option">
+                            <input type="radio" name="admin_background" value="linear-gradient(180deg, #f6f6f2, #eceff3)" {{if eq $adminBg "linear-gradient(180deg, #f6f6f2, #eceff3)"}}checked{{end}}>
+                            <span class="bg-shell"><span class="bg-preview" style="background: linear-gradient(180deg, #f6f6f2, #eceff3);"></span><span class="bg-name">默认渐变</span></span>
+                        </label>
+                        <label class="bg-option">
+                            <input type="radio" name="admin_background" value="linear-gradient(180deg, #eef7f3, #e3efe8)" {{if eq $adminBg "linear-gradient(180deg, #eef7f3, #e3efe8)"}}checked{{end}}>
+                            <span class="bg-shell"><span class="bg-preview" style="background: linear-gradient(180deg, #eef7f3, #e3efe8);"></span><span class="bg-name">浅青渐变</span></span>
+                        </label>
+                        <label class="bg-option">
+                            <input type="radio" name="admin_background" value="linear-gradient(180deg, #f7f2e9, #efe8da)" {{if eq $adminBg "linear-gradient(180deg, #f7f2e9, #efe8da)"}}checked{{end}}>
+                            <span class="bg-shell"><span class="bg-preview" style="background: linear-gradient(180deg, #f7f2e9, #efe8da);"></span><span class="bg-name">暖沙渐变</span></span>
+                        </label>
+                    </div>
+
+                    <h4 class="bg-group-title">内置图片</h4>
+                    <div class="bg-grid">
+                        <label class="bg-option">
+                            <input type="radio" name="admin_background" value="url('/static/img/paper-bg.svg') center top / cover no-repeat fixed" {{if eq $adminBg "url('/static/img/paper-bg.svg') center top / cover no-repeat fixed"}}checked{{end}}>
+                            <span class="bg-shell"><span class="bg-preview" style="background: url('/static/img/paper-bg.svg') center / cover no-repeat;"></span><span class="bg-name">纸纹</span></span>
+                        </label>
+                        <label class="bg-option">
+                            <input type="radio" name="admin_background" value="url('/static/img/hero-bg.svg') center / cover no-repeat fixed" {{if eq $adminBg "url('/static/img/hero-bg.svg') center / cover no-repeat fixed"}}checked{{end}}>
+                            <span class="bg-shell"><span class="bg-preview" style="background: url('/static/img/hero-bg.svg') center / cover no-repeat;"></span><span class="bg-name">星云</span></span>
+                        </label>
+                    </div>
+                </fieldset>
+
+                <div class="form-actions">
+                    <button class="btn" type="submit">保存设置</button>
+                </div>
+            </form>
+        </section>
+
+        <section class="admin-card upload-card">
+            <h3>本地上传背景图片</h3>
+            <p class="muted">点击按钮后选择本地图片，会自动上传并立即生效（支持 jpg/jpeg/png/gif/webp/svg，最大 10MB）。</p>
+            <div class="upload-actions">
+                <form method="post" action="/admin/appearance/upload" enctype="multipart/form-data">
+                    <input type="hidden" name="target" value="site">
+                    <label class="btn ghost upload-btn">
+                        上传前台背景图
+                        <input class="upload-file-input" type="file" name="background_image" accept=".jpg,.jpeg,.png,.gif,.webp,.svg,image/*">
+                    </label>
+                </form>
+                <form method="post" action="/admin/appearance/upload" enctype="multipart/form-data">
+                    <input type="hidden" name="target" value="admin">
+                    <label class="btn ghost upload-btn">
+                        上传后台背景图
+                        <input class="upload-file-input" type="file" name="background_image" accept=".jpg,.jpeg,.png,.gif,.webp,.svg,image/*">
+                    </label>
+                </form>
+            </div>
+        </section>
+    </main>
+    <script>
+        (function () {
+            var inputs = document.querySelectorAll('.upload-file-input');
+            for (var i = 0; i < inputs.length; i++) {
+                inputs[i].addEventListener('change', function () {
+                    if (this.files && this.files.length > 0) {
+                        this.form.submit();
+                    }
+                });
+            }
+        })();
+    </script>
+</body>
+</html>
+{{end}}

@@ -1,0 +1,34 @@
+﻿{{define "member_appearance"}}
+<!doctype html>
+<html lang="zh-CN">
+{{template "admin_head" .}}
+<body class="admin">
+    {{template "member_nav" .}}
+    {{$memberBg := index .Settings "admin_background"}}
+    <main class="admin-main">
+        <div class="admin-header">
+            <h2>外观设置</h2>
+        </div>
+        {{if .Flash}}<div class="flash">{{.Flash}}</div>{{end}}
+        <section class="admin-card">
+            <form class="admin-form" method="post" action="/member/appearance">
+                <fieldset class="bg-fieldset">
+                    <legend>访问者后台背景</legend>
+                    <div class="bg-grid">
+                        <label class="bg-option"><input type="radio" name="member_background" value="#f5f7f6" {{if eq $memberBg "#f5f7f6"}}checked{{end}}><span class="bg-shell"><span class="bg-preview" style="background:#f5f7f6;"></span><span class="bg-name">雾白</span></span></label>
+                        <label class="bg-option"><input type="radio" name="member_background" value="#f3f4f8" {{if eq $memberBg "#f3f4f8"}}checked{{end}}><span class="bg-shell"><span class="bg-preview" style="background:#f3f4f8;"></span><span class="bg-name">云灰</span></span></label>
+                        <label class="bg-option"><input type="radio" name="member_background" value="#f7f3ec" {{if eq $memberBg "#f7f3ec"}}checked{{end}}><span class="bg-shell"><span class="bg-preview" style="background:#f7f3ec;"></span><span class="bg-name">暖米</span></span></label>
+                        <label class="bg-option"><input type="radio" name="member_background" value="linear-gradient(180deg, #f6f6f2, #eceff3)" {{if eq $memberBg "linear-gradient(180deg, #f6f6f2, #eceff3)"}}checked{{end}}><span class="bg-shell"><span class="bg-preview" style="background:linear-gradient(180deg, #f6f6f2, #eceff3);"></span><span class="bg-name">默认渐变</span></span></label>
+                        <label class="bg-option"><input type="radio" name="member_background" value="linear-gradient(180deg, #eef7f3, #e3efe8)" {{if eq $memberBg "linear-gradient(180deg, #eef7f3, #e3efe8)"}}checked{{end}}><span class="bg-shell"><span class="bg-preview" style="background:linear-gradient(180deg, #eef7f3, #e3efe8);"></span><span class="bg-name">浅青渐变</span></span></label>
+                        <label class="bg-option"><input type="radio" name="member_background" value="linear-gradient(180deg, #f7f2e9, #efe8da)" {{if eq $memberBg "linear-gradient(180deg, #f7f2e9, #efe8da)"}}checked{{end}}><span class="bg-shell"><span class="bg-preview" style="background:linear-gradient(180deg, #f7f2e9, #efe8da);"></span><span class="bg-name">暖沙渐变</span></span></label>
+                        <label class="bg-option"><input type="radio" name="member_background" value="url('/static/img/paper-bg.svg') center top / cover no-repeat fixed" {{if eq $memberBg "url('/static/img/paper-bg.svg') center top / cover no-repeat fixed"}}checked{{end}}><span class="bg-shell"><span class="bg-preview" style="background:url('/static/img/paper-bg.svg') center / cover no-repeat;"></span><span class="bg-name">纸纹</span></span></label>
+                        <label class="bg-option"><input type="radio" name="member_background" value="url('/static/img/hero-bg.svg') center / cover no-repeat fixed" {{if eq $memberBg "url('/static/img/hero-bg.svg') center / cover no-repeat fixed"}}checked{{end}}><span class="bg-shell"><span class="bg-preview" style="background:url('/static/img/hero-bg.svg') center / cover no-repeat;"></span><span class="bg-name">星云</span></span></label>
+                    </div>
+                </fieldset>
+                <div class="form-actions"><button type="submit">保存外观</button></div>
+            </form>
+        </section>
+    </main>
+</body>
+</html>
+{{end}}

@@ -1,0 +1,122 @@
+﻿{{define "admin_reports"}}
+<!doctype html>
+<html lang="zh-CN">
+{{template "admin_head" .}}
+<body class="admin">
+    {{template "admin_nav" .}}
+    <main class="admin-main">
+        <div class="admin-header">
+            <h2>举报中心</h2>
+        </div>
+        {{if .Flash}}<div class="flash">{{.Flash}}</div>{{end}}
+
+        {{$status := index .Settings "report_status"}}
+        <form class="admin-form compact" method="get" action="/admin/reports">
+            <label>
+                <span>状态筛选</span>
+                <select name="status" onchange="this.form.submit()">
+                    <option value="pending" {{if eq $status "pending"}}selected{{end}}>待处理</option>
+                    <option value="approved" {{if eq $status "approved"}}selected{{end}}>已通过</option>
+                    <option value="rejected" {{if eq $status "rejected"}}selected{{end}}>已驳回</option>
+                    <option value="" {{if eq $status ""}}selected{{end}}>全部</option>
+                </select>
+            </label>
+        </form>
+
+        <section class="admin-card report-card">
+            <h3>文章举报</h3>
+            <div class="admin-table report-table">
+                <div class="admin-row admin-row-head report-row">
+                    <span>举报用户</span>
+                    <span>文章</span>
+                    <span>举报原因</span>
+                    <span>状态</span>
+                    <span>操作</span>
+                </div>
+                {{if .PostReports}}
+                {{range .PostReports}}
+                <div class="admin-row report-row">
+                    <span>{{if .ReporterDisplayName}}{{.ReporterDisplayName}}{{else}}{{.ReporterUsername}}{{end}}</span>
+                    <span>{{if .PostTitle}}<a href="/post/{{.PostSlug}}" target="_blank" rel="noreferrer">{{.PostTitle}}</a>{{else}}(文章已删除){{end}}</span>
+                    <span>{{.Reason}}</span>
+                    <span>{{if eq .Status "pending"}}待处理{{else if eq .Status "approved"}}已通过{{else}}已驳回{{end}}</span>
+                    <span>
+                        {{if eq .Status "pending"}}
+                        <form class="admin-form compact" method="post" action="/admin/reports">
+                            <input type="hidden" name="report_type" value="post">
+                            <input type="hidden" name="report_id" value="{{.ID}}">
+                            <input type="hidden" name="status" value="{{$status}}">
+                            <label>
+                                <span>备注</span>
+                                <input type="text" name="review_note" placeholder="处理说明（可选）">
+                            </label>
+                            <div class="form-actions">
+                                <button type="submit" name="action" value="approve">通过并隐藏</button>
+                                <button class="danger" type="submit" name="action" value="reject">驳回</button>
+                            </div>
+                        </form>
+                        {{else}}
+                        <span class="muted">已处理</span>
+                        {{end}}
+                    </span>
+                </div>
+                {{end}}
+                {{else}}
+                <div class="admin-row report-row">
+                    <span class="muted">暂无文章举报</span>
+                    <span></span><span></span><span></span><span></span>
+                </div>
+                {{end}}
+            </div>
+        </section>
+
+        <section class="admin-card report-card">
+            <h3>留言举报</h3>
+            <div class="admin-table report-table">
+                <div class="admin-row admin-row-head report-row">
+                    <span>举报用户</span>
+                    <span>留言内容</span>
+                    <span>举报原因</span>
+                    <span>状态</span>
+                    <span>操作</span>
+                </div>
+                {{if .CommentReports}}
+                {{range .CommentReports}}
+                <div class="admin-row report-row">
+                    <span>{{if .ReporterDisplayName}}{{.ReporterDisplayName}}{{else}}{{.ReporterUsername}}{{end}}</span>
+                    <span>{{.CommentContent}}</span>
+                    <span>{{.Reason}}</span>
+                    <span>{{if eq .Status "pending"}}待处理{{else if eq .Status "approved"}}已通过{{else}}已驳回{{end}}</span>
+                    <span>
+                        {{if eq .Status "pending"}}
+                        <form class="admin-form compact" method="post" action="/admin/reports">
+                            <input type="hidden" name="report_type" value="comment">
+                            <input type="hidden" name="report_id" value="{{.ID}}">
+                            <input type="hidden" name="status" value="{{$status}}">
+                            <label>
+                                <span>备注</span>
+                                <input type="text" name="review_note" placeholder="处理说明（可选）">
+                            </label>
+                            <div class="form-actions">
+                                <button type="submit" name="action" value="approve">通过并隐藏</button>
+                                <button class="danger" type="submit" name="action" value="reject">驳回</button>
+                            </div>
+                        </form>
+                        {{else}}
+                        <span class="muted">已处理</span>
+                        {{end}}
+                    </span>
+                </div>
+                {{end}}
+                {{else}}
+                <div class="admin-row report-row">
+                    <span class="muted">暂无留言举报</span>
+                    <span></span><span></span><span></span><span></span>
+                </div>
+                {{end}}
+            </div>
+        </section>
+    </main>
+</body>
+</html>
+{{end}}

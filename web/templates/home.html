@@ -1,0 +1,61 @@
+{{define "home"}}
+<!doctype html>
+<html lang="zh-CN">
+{{template "head" .}}
+<body class="site">
+    {{template "site_nav" .}}
+    <header class="hero">
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+            <p class="hero-motto">{{.Site.MottoCN}}</p>
+            <p class="hero-motto-en">{{.Site.MottoEN}}</p>
+        </div>
+    </header>
+    <main class="layout">
+        {{template "sidebar" .}}
+        <section class="content">
+            <div class="glass-card intro">
+                <div class="home-intro-head">
+                    <div>
+                        <h2>最新文章</h2>
+                        <p>把学习的过程与灵感，写成可以回望的故事。</p>
+                    </div>
+                    <form class="home-scope-form" method="get" action="/">
+                        <label for="home-scope">显示范围</label>
+                        <select id="home-scope" name="scope">
+                            <option value="all" {{if eq .HomeScope "all"}}selected{{end}}>全部</option>
+                            <option value="official" {{if eq .HomeScope "official"}}selected{{end}}>官方</option>
+                            <option value="personal" {{if eq .HomeScope "personal"}}selected{{end}}>个人</option>
+                        </select>
+                        <button type="submit">展开</button>
+                    </form>
+                </div>
+            </div>
+            {{if .Posts}}
+                {{range .Posts}}
+                <article class="post-card">
+                    <a class="post-cover" href="/post/{{.Slug}}">
+                        <img src="{{.CoverURL}}" alt="{{.Title}}">
+                    </a>
+                    <div class="post-body">
+                        <h3><a href="/post/{{.Slug}}">{{.Title}}</a></h3>
+                        <div class="post-meta">
+                            <span>发布时间：{{formatDate .PublishedAt}}</span>
+                            <span>发布者：{{index $.PostAuthors .AuthorID}}</span>
+                            <span>浏览：{{.Views}}</span>
+                        </div>
+                        <p>{{.Summary}}</p>
+                    </div>
+                </article>
+                {{end}}
+            {{else}}
+                <div class="glass-card">
+                    <p class="muted">当前筛选下暂无文章。</p>
+                </div>
+            {{end}}
+        </section>
+    </main>
+    {{template "footer" .}}
+</body>
+</html>
+{{end}}

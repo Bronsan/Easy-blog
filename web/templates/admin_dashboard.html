@@ -1,0 +1,40 @@
+﻿{{define "admin_dashboard"}}
+<!doctype html>
+<html lang="zh-CN">
+{{template "admin_head" .}}
+<body class="admin">
+    {{template "admin_nav" .}}
+    <main class="admin-main">
+        {{if not .CanManageContent}}
+        <div class="flash">当前账号为“访问者”，仅允许登录后台查看概览，无管理权限。</div>
+        {{end}}
+        <section class="admin-grid">
+            <div class="admin-card">
+                <h3>文章数量</h3>
+                <p class="stat">{{.Stats.Posts}}</p>
+            </div>
+            <div class="admin-card">
+                <h3>总浏览量</h3>
+                <p class="stat">{{.Stats.Views}}</p>
+            </div>
+            <div class="admin-card">
+                <h3>快捷入口</h3>
+                <div class="quick-links">
+                    {{if .CanManageContent}}
+                    <a href="/admin/posts/new">新建文章</a>
+                    <a href="/admin/pages">管理页面</a>
+                    <a href="/admin/pages/board-comments">管理留言板留言</a>
+                    <a href="/admin/appearance">外观设置</a>
+                    <a href="/admin/avatar-reviews">头像审核</a>
+                    {{end}}
+                    {{if .CanManageUsers}}
+                    <a href="/admin/users">用户管理</a>
+                    {{end}}
+                    <a href="/">返回前台</a>
+                </div>
+            </div>
+        </section>
+    </main>
+</body>
+</html>
+{{end}}

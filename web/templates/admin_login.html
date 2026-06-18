@@ -1,0 +1,38 @@
+﻿{{define "admin_login"}}
+<!doctype html>
+<html lang="zh-CN">
+{{template "admin_head" .}}
+<body class="admin login">
+    <div class="login-shell">
+        <div class="login-hero">
+            <span class="login-mark"></span>
+            <div class="login-hero-text">
+                <span class="hero-title">{{.Site.Title}}</span>
+                <span class="hero-sub">后台登录</span>
+            </div>
+        </div>
+        <div class="login-card">
+            <div class="login-heading">
+                <h1>欢迎回来</h1>
+                <p class="muted">使用管理员账号登录。</p>
+            </div>
+            {{if .Flash}}<div class="flash">{{.Flash}}</div>{{end}}
+            <form method="post" action="/admin/login">
+                <label>
+                    <span>用户名</span>
+                    <input type="text" name="username" placeholder="请输入用户名" autocomplete="username" autofocus>
+                </label>
+                <label>
+                    <span>密码</span>
+                    <input type="password" name="password" placeholder="请输入密码" autocomplete="current-password">
+                </label>
+                <button type="submit">登录</button>
+            </form>
+            <div class="login-tip">
+                <p>默认账号：环境变量 BLOG_ADMIN_USER / BLOG_ADMIN_PASS</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+{{end}}

@@ -1,0 +1,42 @@
+{{define "member_sessions"}}
+<!doctype html>
+<html lang="zh-CN">
+{{template "admin_head" .}}
+<body class="admin">
+    {{template "member_nav" .}}
+    <main class="admin-main">
+        <div class="admin-header">
+            <h2>会话管理</h2>
+        </div>
+        {{if .Flash}}<div class="flash">{{.Flash}}</div>{{end}}
+        <div class="admin-table">
+            <div class="admin-row admin-row-head">
+                <span>创建时间</span>
+                <span>到期时间</span>
+                <span>IP</span>
+                <span>设备信息</span>
+                <span>操作</span>
+            </div>
+            {{if .Sessions}}
+            {{range .Sessions}}
+            <div class="admin-row">
+                <span>{{formatDate .CreatedAt}}</span>
+                <span>{{formatDate .ExpiresAt}}</span>
+                <span>{{if .IP}}{{.IP}}{{else}}-{{end}}</span>
+                <span>{{if .UserAgent}}{{.UserAgent}}{{else}}-{{end}}</span>
+                <span>
+                    <form class="admin-form compact" method="post" action="/member/sessions/revoke" onsubmit="return confirm('确认下线该会话？');">
+                        <input type="hidden" name="session_id" value="{{.ID}}">
+                        <button class="danger" type="submit">下线</button>
+                    </form>
+                </span>
+            </div>
+            {{end}}
+            {{else}}
+            <div class="admin-row"><span class="muted">暂无会话记录</span><span></span><span></span><span></span><span></span></div>
+            {{end}}
+        </div>
+    </main>
+</body>
+</html>
+{{end}}

@@ -1,0 +1,31 @@
+{{define "login"}}
+<!doctype html>
+<html lang="zh-CN">
+{{template "head" .}}
+<body class="site">
+    {{template "site_nav" .}}
+    <main class="auth-main">
+        <section class="auth-card">
+            <h1>用户登录</h1>
+            <p class="muted">登录后可留言、点赞点踩、进入个人后台。</p>
+            {{if .Flash}}<div class="alert">{{.Flash}}</div>{{end}}
+            <form class="auth-form" method="post" action="/login">
+                <input type="hidden" name="next" value="{{.AuthNext}}">
+                <label>
+                    <span>用户名</span>
+                    <input type="text" name="username" value="{{.AuthFormUsername}}" placeholder="请输入用户名" autocomplete="username" required>
+                </label>
+                <label>
+                    <span>密码</span>
+                    <input type="password" name="password" placeholder="请输入密码" autocomplete="current-password" required>
+                </label>
+                <button type="submit">登录</button>
+            </form>
+            <p class="auth-switch"><a href="/forgot-password">忘记密码？</a></p>
+            <p class="auth-switch">还没有账号？<a href="/register">去注册</a></p>
+        </section>
+    </main>
+    {{template "footer" .}}
+</body>
+</html>
+{{end}}

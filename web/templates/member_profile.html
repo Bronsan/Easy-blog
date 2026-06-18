@@ -1,0 +1,106 @@
+{{define "member_profile"}}
+<!doctype html>
+<html lang="zh-CN">
+{{template "admin_head" .}}
+<body class="admin">
+    {{template "member_nav" .}}
+    <main class="admin-main">
+        <div class="admin-header">
+            <h2>个人设置</h2>
+        </div>
+        {{if .Flash}}<div class="flash">{{.Flash}}</div>{{end}}
+
+        <div class="member-profile-layout">
+            <section class="admin-card profile-card">
+                <h3>账号信息</h3>
+                <div class="profile-summary">
+                    <img class="member-avatar-preview" src="{{if and .User .User.AvatarURL}}{{.User.AvatarURL}}{{else}}/static/img/avatar.svg{{end}}" alt="当前头像">
+                    <div class="profile-summary-text">
+                        <p><strong>用户名：</strong>{{if .User}}{{.User.Username}}{{end}}</p>
+                        <p><strong>当前显示名：</strong>{{if .User}}{{.User.DisplayName}}{{end}}</p>
+                        <p class="muted">修改资料时会先弹出密码验证框，验证通过后才会提交。</p>
+                    </div>
+                </div>
+
+                <div class="profile-forms">
+                    <form class="admin-form profile-secure-form profile-form-card" method="post" action="/member/profile">
+                        <input type="hidden" name="action" value="update_display_name">
+                        <input type="hidden" name="current_password" value="">
+                        <h4>修改显示名</h4>
+                        <label><span>新显示名</span><input type="text" name="display_name" value="{{if .User}}{{.User.DisplayName}}{{end}}" required></label>
+                        <div class="form-actions"><button type="submit">保存显示名</button></div>
+                    </form>
+
+                    <form class="admin-form profile-secure-form profile-form-card" method="post" action="/member/profile">
+                        <input type="hidden" name="action" value="update_password">
+                        <input type="hidden" name="current_password" value="">
+                        <h4>修改密码</h4>
+                        <label><span>新密码</span><input type="password" name="new_password" placeholder="至少 6 位" required></label>
+                        <label><span>确认新密码</span><input type="password" name="confirm_password" placeholder="再次输入新密码" required></label>
+                        <div class="form-actions"><button type="submit">更新密码</button></div>
+                    </form>
+                </div>
+            </section>
+
+            <section class="admin-card profile-card">
+                <h3>头像审核</h3>
+                <p class="muted">上传后进入待审核，管理员通过后才会替换当前头像。</p>
+                <form class="admin-form profile-avatar-form profile-form-card" method="post" action="/member/profile/avatar" enctype="multipart/form-data">
+                    <input type="hidden" name="current_password" value="">
+                    <h4>提交新头像</h4>
+                    <label><span>选择头像图片</span><input type="file" name="avatar_image" accept=".jpg,.jpeg,.png,.gif,.webp,.svg,image/*" required></label>
+                    <div class="form-actions"><button type="submit">提交审核</button></div>
+                </form>
+            </section>
+        </div>
+
+        <section class="admin-card profile-record-card">
+            <h3>头像审核记录</h3>
+            <div class="admin-table avatar-review-table">
+                <div class="admin-row admin-row-head avatar-review-row">
+                    <span>提交时间</span>
+                    <span>状态</span>
+                    <span>备注</span>
+                    <span>图片</span>
+                </div>
+                {{if .AvatarRequests}}
+                {{range .AvatarRequests}}
+                <div class="admin-row avatar-review-row">
+                    <span>{{formatDate .CreatedAt}}</span>
+                    <span>{{if eq .Status "pending"}}待审核{{else if eq .Status "approved"}}已通过{{else}}已驳回{{end}}</span>
+                    <span>{{if .ReviewNote}}{{.ReviewNote}}{{else}}-{{end}}</span>
+                    <span><img class="avatar-review-image" src="{{.AvatarURL}}" alt="头像申请图"></span>
+                </div>
+                {{end}}
+                {{else}}
+                <div class="admin-row avatar-review-row"><span class="muted">暂无记录</span><span></span><span></span><span></span></div>
+                {{end}}
+            </div>
+        </section>
+    </main>
+    <script>
+        (function () {
+            function bindSecureForm(selector) {
+                var forms = document.querySelectorAll(selector);
+                for (var i = 0; i < forms.length; i++) {
+                    forms[i].addEventListener('submit', function (e) {
+                        // 修改资料前统一做一次当前密码验证，避免误触或借用登录态直接改资料。
+                        var pwd = window.prompt('请输入当前密码以确认本次修改：', '');
+                        if (!pwd) {
+                            e.preventDefault();
+                            return;
+                        }
+                        var hidden = this.querySelector('input[name="current_password"]');
+                        if (hidden) {
+                            hidden.value = pwd;
+                        }
+                    });
+                }
+            }
+            bindSecureForm('.profile-secure-form');
+            bindSecureForm('.profile-avatar-form');
+        })();
+    </script>
+</body>
+</html>
+{{end}}

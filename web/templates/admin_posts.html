@@ -1,0 +1,37 @@
+﻿{{define "admin_posts"}}
+<!doctype html>
+<html lang="zh-CN">
+{{template "admin_head" .}}
+<body class="admin">
+    {{template "admin_nav" .}}
+    <main class="admin-main">
+        <div class="admin-header">
+            <h2>文章管理</h2>
+            <a class="btn" href="/admin/posts/new">新建文章</a>
+        </div>
+        <div class="admin-table">
+            <div class="admin-row admin-row-head">
+                <span>标题</span>
+                <span>发布时间</span>
+                <span>状态</span>
+                <span>操作</span>
+            </div>
+            {{range .Posts}}
+            <div class="admin-row">
+                <span>{{.Title}}</span>
+                <span>{{formatDate .PublishedAt}}</span>
+                <span>{{if .IsPublic}}公开{{else}}草稿{{end}}</span>
+                <span class="actions">
+                    <a href="/admin/posts/edit?id={{.ID}}">编辑</a>
+                    <form method="post" action="/admin/posts/delete">
+                        <input type="hidden" name="id" value="{{.ID}}">
+                        <button type="submit" onclick="return confirm('确认删除这篇文章吗？')">删除</button>
+                    </form>
+                </span>
+            </div>
+            {{end}}
+        </div>
+    </main>
+</body>
+</html>
+{{end}}

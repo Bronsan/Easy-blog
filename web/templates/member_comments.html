@@ -1,0 +1,46 @@
+﻿{{define "member_comments"}}
+<!doctype html>
+<html lang="zh-CN">
+{{template "admin_head" .}}
+<body class="admin">
+    {{template "member_nav" .}}
+    <main class="admin-main">
+        <div class="admin-header">
+            <h2>我的留言</h2>
+        </div>
+        {{if .Flash}}<div class="flash">{{.Flash}}</div>{{end}}
+        <div class="admin-table member-comments-table">
+            <div class="admin-row admin-row-head member-comment-row">
+                <span>来源</span>
+                <span>留言内容</span>
+                <span>时间</span>
+                <span>操作</span>
+            </div>
+            {{if .Comments}}
+            {{range .Comments}}
+            <div class="admin-row member-comment-row">
+                <span>{{if .PostTitle}}{{.PostTitle}}{{else}}(已删除内容){{end}}</span>
+                <span>
+                    <form class="admin-form compact" method="post" action="/member/comments/edit">
+                        <input type="hidden" name="id" value="{{.ID}}">
+                        <textarea name="content" rows="3">{{.Content}}</textarea>
+                        <button type="submit">保存留言</button>
+                    </form>
+                </span>
+                <span>{{formatDate .CreatedAt}}</span>
+                <span>
+                    <form method="post" action="/member/comments/delete" onsubmit="return confirm('确认删除这条留言吗？');">
+                        <input type="hidden" name="id" value="{{.ID}}">
+                        <button class="danger" type="submit">删除</button>
+                    </form>
+                </span>
+            </div>
+            {{end}}
+            {{else}}
+            <div class="admin-row member-comment-row"><span class="muted">暂无留言</span><span></span><span></span><span></span></div>
+            {{end}}
+        </div>
+    </main>
+</body>
+</html>
+{{end}}

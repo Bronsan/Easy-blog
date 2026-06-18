@@ -1,0 +1,158 @@
+﻿{{define "head"}}
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{.Site.Title}}</title>
+    <link rel="stylesheet" href="/static/css/main.css">
+    <link rel="icon" href="/static/img/favicon.svg">
+    <style>
+        :root { --site-bg: {{if .SiteBackgroundCSS}}{{.SiteBackgroundCSS}}{{else}}url('/static/img/paper-bg.svg') center top / cover no-repeat fixed{{end}}; }
+    </style>
+</head>
+{{end}}
+
+{{define "site_nav"}}
+<nav class="top-nav">
+    <div class="nav-logo">
+        <span class="logo-title">{{.Site.Title}}</span>
+        <span class="logo-sub">{{.Site.Subtitle}}</span>
+    </div>
+    <div class="nav-links">
+        <a class="{{if eq .Nav "home"}}active{{end}}" href="/">首页</a>
+        <a class="{{if eq .Nav "archive"}}active{{end}}" href="/archive">归档</a>
+        {{range .Pages}}
+        <a class="{{if and (eq $.Nav "page") (eq $.ActiveSlug .Slug)}}active{{end}}" href="{{pageURL .Slug}}">{{.Title}}</a>
+        {{end}}
+    </div>
+    <form class="nav-search" action="/search" method="get">
+        <input type="hidden" name="from" value="{{.SearchFrom}}">
+        <input type="text" name="q" placeholder="搜索当前页面文章关键字" value="{{.Query}}">
+        <button type="submit" aria-label="搜索当前板块">搜索</button>
+    </form>
+    <div class="nav-auth">
+        {{if .User}}
+        <span class="nav-user">
+            <img class="nav-avatar" src="{{if .User.AvatarURL}}{{.User.AvatarURL}}{{else}}/static/img/avatar.svg{{end}}" alt="头像">
+            <span>{{.User.DisplayName}}</span>
+        </span>
+        <a class="nav-auth-link" href="{{.BackendHome}}">后台</a>
+        <a class="nav-auth-link" href="/logout">退出</a>
+        {{else}}
+        <a class="nav-auth-link {{if eq .Nav "login"}}active{{end}}" href="/login">登录</a>
+        <a class="nav-auth-link {{if eq .Nav "register"}}active{{end}}" href="/register">注册</a>
+        {{end}}
+    </div>
+</nav>
+{{end}}
+
+{{define "sidebar"}}
+<aside class="sidebar">
+    <div class="panel panel-notice">
+        <h3>公告</h3>
+        <p>{{index .Settings "notice"}}</p>
+    </div>
+    <div class="panel panel-quote">
+        <h3>每日一言</h3>
+        <p>{{index .Settings "daily_quote"}}</p>
+    </div>
+    <div class="panel panel-author">
+        <img class="avatar" src="{{if and .User .User.AvatarURL}}{{.User.AvatarURL}}{{else}}{{index .Settings "avatar_url"}}{{end}}" alt="头像">
+        <p class="author-name">{{.SidebarName}}</p>
+        <div class="author-stats">
+            <div>
+                <span class="stat-value">{{.SidebarPosts}}</span>
+                <span class="stat-label">文章</span>
+            </div>
+            <div>
+                <span class="stat-value">{{.SidebarPages}}</span>
+                <span class="stat-label">页面</span>
+            </div>
+            <div>
+                <span class="stat-value">{{.SidebarViews}}</span>
+                <span class="stat-label">浏览</span>
+            </div>
+        </div>
+    </div>
+</aside>
+{{end}}
+
+{{define "footer"}}
+<footer class="site-footer">
+    <div class="footer-inner">
+        {{if or .Site.ICP .Site.Gongan}}
+        <div class="footer-badges">
+            {{if .Site.ICP}}
+            <span>备案号 {{.Site.ICP}}</span>
+            {{end}}
+            {{if .Site.Gongan}}
+            <span>{{.Site.Gongan}}</span>
+            {{end}}
+        </div>
+        {{end}}
+        <div class="footer-meta">
+            <span>{{.Site.Footer}}</span>
+            <span>Copyright {{year}} © :)</span>
+        </div>
+    </div>
+</footer>
+{{end}}
+
+{{define "admin_head"}}
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>后台管理 - {{.Site.Title}}</title>
+    <link rel="stylesheet" href="/static/css/admin.css">
+    <link rel="icon" href="/static/img/favicon.svg">
+    <style>
+        :root { --admin-bg: {{if .AdminBackgroundCSS}}{{.AdminBackgroundCSS}}{{else}}linear-gradient(180deg, #f6f6f2, #eceff3){{end}}; }
+    </style>
+</head>
+{{end}}
+
+{{define "admin_nav"}}
+<nav class="admin-nav">
+    <div class="admin-brand">
+        <span>{{.Site.Title}} 后台</span>
+        <small>Go + SQLite</small>
+    </div>
+    <div class="admin-links">
+        {{if .CanManageContent}}
+        <a class="{{if eq .Nav "admin-posts"}}active{{end}}" href="/admin/posts">文章</a>
+        <a class="{{if eq .Nav "admin-pages"}}active{{end}}" href="/admin/pages">页面</a>
+        <a class="{{if eq .Nav "admin-reports"}}active{{end}}" href="/admin/reports">举报</a>
+        <a class="{{if eq .Nav "admin-appearance"}}active{{end}}" href="/admin/appearance">外观</a>
+        <a class="{{if eq .Nav "admin-avatar-reviews"}}active{{end}}" href="/admin/avatar-reviews">头像审核</a>
+        {{end}}
+        {{if .CanManageUsers}}
+        <a class="{{if eq .Nav "admin-users"}}active{{end}}" href="/admin/users">用户</a>
+        {{end}}
+    </div>
+    <div class="admin-account">
+        <span>{{if .User}}{{.User.DisplayName}} · {{if eq .User.Role "owner"}}站长{{else if eq .User.Role "maintainer"}}维护{{else}}访问者{{end}}{{end}}</span>
+        <a href="/admin/logout">退出</a>
+    </div>
+</nav>
+{{end}}
+
+{{define "member_nav"}}
+<nav class="admin-nav">
+    <div class="admin-brand">
+        <span>{{.Site.Title}} 访问者后台</span>
+        <small>仅管理我自己的内容</small>
+    </div>
+    <div class="admin-links">
+        <a class="{{if eq .Nav "member-profile"}}active{{end}}" href="/member">个人设置</a>
+        <a class="{{if eq .Nav "member-posts"}}active{{end}}" href="/member/posts">我的文章</a>
+        <a class="{{if eq .Nav "member-pages"}}active{{end}}" href="/member/pages">我的页面</a>
+        <a class="{{if eq .Nav "member-comments"}}active{{end}}" href="/member/comments">我的留言</a>
+        <a class="{{if eq .Nav "member-notifications"}}active{{end}}" href="/member/notifications">通知{{if gt .UnreadCount 0}}({{.UnreadCount}}){{end}}</a>
+        <a class="{{if eq .Nav "member-sessions"}}active{{end}}" href="/member/sessions">会话</a>
+        <a class="{{if eq .Nav "member-appearance"}}active{{end}}" href="/member/appearance">外观</a>
+    </div>
+    <div class="admin-account">
+        <span>{{if .User}}{{.User.DisplayName}}{{end}}</span>
+        <a href="/admin/logout">退出</a>
+    </div>
+</nav>
+{{end}}

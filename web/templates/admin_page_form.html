@@ -1,0 +1,43 @@
+﻿{{define "admin_page_form"}}
+<!doctype html>
+<html lang="zh-CN">
+{{template "admin_head" .}}
+<body class="admin">
+    {{template "admin_nav" .}}
+    <main class="admin-main">
+        <h2>{{if .Post}}编辑页面{{else}}新增页面板块{{end}}</h2>
+        {{if .Flash}}<div class="flash">{{.Flash}}</div>{{end}}
+        <form class="admin-form" method="post">
+            <label>
+                <span>标题</span>
+                <input type="text" name="title" value="{{if .Post}}{{.Post.Title}}{{end}}" placeholder="请输入页面标题">
+            </label>
+            <label>
+                <span>Slug（可选）</span>
+                <input type="text" name="slug" value="{{if .Post}}{{.Post.Slug}}{{end}}" placeholder="页面别名">
+            </label>
+            <label>
+                <span>摘要</span>
+                <textarea name="summary" rows="3">{{if .Post}}{{.Post.Summary}}{{end}}</textarea>
+            </label>
+            <label>
+                <span>发布时间（YYYY-MM-DD HH:MM）</span>
+                <input type="text" name="published_at" value="{{if .Post}}{{formatDate .Post.PublishedAt}}{{end}}">
+            </label>
+            <label class="checkbox">
+                <input type="checkbox" name="is_public" {{if .Post}}{{if .Post.IsPublic}}checked{{end}}{{else}}checked{{end}}>
+                <span>公开显示</span>
+            </label>
+            <label>
+                <span>内容（支持 Markdown）</span>
+                <textarea name="content" rows="12">{{if .Post}}{{.Post.Content}}{{end}}</textarea>
+            </label>
+            <div class="form-actions">
+                <button type="submit">保存</button>
+                <a class="btn ghost" href="/admin/pages">返回列表</a>
+            </div>
+        </form>
+    </main>
+</body>
+</html>
+{{end}}

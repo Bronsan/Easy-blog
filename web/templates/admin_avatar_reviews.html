@@ -1,0 +1,90 @@
+﻿{{define "admin_avatar_reviews"}}
+<!doctype html>
+<html lang="zh-CN">
+{{template "admin_head" .}}
+<body class="admin">
+    {{template "admin_nav" .}}
+    <main class="admin-main">
+        <div class="admin-header">
+            <div>
+                <h1>头像审核</h1>
+                <p class="muted">仅审核用户提交的头像申请，通过后才会生效。</p>
+            </div>
+        </div>
+        {{if .Flash}}
+        <div class="flash">{{.Flash}}</div>
+        {{end}}
+
+        {{$status := index .Settings "avatar_review_status"}}
+        <form class="admin-form compact" method="get" action="/admin/avatar-reviews">
+            <label>
+                <span>筛选状态</span>
+                <select name="status" onchange="this.form.submit()">
+                    <option value="pending" {{if eq $status "pending"}}selected{{end}}>待审核</option>
+                    <option value="approved" {{if eq $status "approved"}}selected{{end}}>已通过</option>
+                    <option value="rejected" {{if eq $status "rejected"}}selected{{end}}>已驳回</option>
+                    <option value="" {{if eq $status ""}}selected{{end}}>全部</option>
+                </select>
+            </label>
+        </form>
+
+        <div class="admin-table avatar-review-table">
+            <div class="admin-row admin-row-head avatar-review-row">
+                <span>申请用户</span>
+                <span>头像预览</span>
+                <span>申请信息</span>
+                <span>审核操作</span>
+            </div>
+            {{if .AvatarRequests}}
+            {{range .AvatarRequests}}
+            <div class="admin-row avatar-review-row">
+                <div>
+                    <strong>{{.DisplayName}}</strong>
+                    <div class="muted">@{{.Username}}</div>
+                </div>
+                <div>
+                    <img class="avatar-review-image" src="{{.AvatarURL}}" alt="头像申请图">
+                </div>
+                <div>
+                    <div>状态：{{if eq .Status "pending"}}待审核{{else if eq .Status "approved"}}已通过{{else}}已驳回{{end}}</div>
+                    <div class="muted">申请时间：{{formatDate .CreatedAt}}</div>
+                    {{if not .ReviewedAt.IsZero}}
+                    <div class="muted">审核时间：{{formatDate .ReviewedAt}}（{{if .ReviewerName}}{{.ReviewerName}}{{else}}系统{{end}}）</div>
+                    {{end}}
+                    {{if .ReviewNote}}
+                    <div class="muted">备注：{{.ReviewNote}}</div>
+                    {{end}}
+                </div>
+                <div>
+                    {{if eq .Status "pending"}}
+                    <form class="admin-form compact" method="post" action="/admin/avatar-reviews">
+                        <input type="hidden" name="request_id" value="{{.ID}}">
+                        <input type="hidden" name="status" value="{{$status}}">
+                        <label>
+                            <span>审核备注（可选）</span>
+                            <input type="text" name="review_note" placeholder="通过/驳回说明">
+                        </label>
+                        <div class="form-actions">
+                            <button type="submit" name="action" value="approve">通过</button>
+                            <button class="danger" type="submit" name="action" value="reject">驳回</button>
+                        </div>
+                    </form>
+                    {{else}}
+                    <span class="muted">该申请已审核</span>
+                    {{end}}
+                </div>
+            </div>
+            {{end}}
+            {{else}}
+            <div class="admin-row avatar-review-row">
+                <span class="muted">暂无数据</span>
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+            {{end}}
+        </div>
+    </main>
+</body>
+</html>
+{{end}}

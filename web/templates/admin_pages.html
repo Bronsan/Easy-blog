@@ -1,0 +1,109 @@
+{{define "admin_pages"}}
+<!doctype html>
+<html lang="zh-CN">
+{{template "admin_head" .}}
+<body class="admin">
+    {{template "admin_nav" .}}
+    <main class="admin-main">
+        <div class="admin-header">
+            <h2>页面管理</h2>
+            <div class="header-actions">
+                {{if .Posts}}
+                <button class="btn ghost" form="admin-page-order-form" type="submit">保存顺序</button>
+                {{end}}
+                {{if .CanManageUsers}}
+                <a class="btn" href="/admin/pages/new">新增板块</a>
+                {{end}}
+            </div>
+        </div>
+        {{if .Flash}}<div class="flash">{{.Flash}}</div>{{end}}
+
+        {{if .Posts}}
+        <p class="muted page-order-tip">提示：按住每行左侧的“拖拽柄”可自由移动，调整后点击“保存顺序”。</p>
+        {{end}}
+        <form id="admin-page-order-form" method="post" action="/admin/pages/reorder" class="page-order-submit">
+            <input id="admin-page-order-ids" type="hidden" name="ids" value="">
+        </form>
+        <div class="admin-table page-order-table">
+            <div class="admin-row admin-row-head">
+                <span>标题</span>
+                <span>Slug</span>
+                <span>更新时间</span>
+                <span>操作</span>
+            </div>
+            {{if .Posts}}
+            {{range .Posts}}
+            <div class="admin-row page-order-row" data-page-id="{{.ID}}" draggable="true">
+                <span class="page-title-cell"><span class="drag-handle" title="拖拽排序">☰</span>{{.Title}}</span>
+                <span>{{.Slug}}</span>
+                <span>{{formatDate .UpdatedAt}}</span>
+                <span class="actions">
+                    <a href="/admin/pages/edit?id={{.ID}}">编辑</a>
+                    <a href="{{pageURL .Slug}}" target="_blank">预览</a>
+                    {{if eq .Slug "board"}}
+                    <a href="/admin/pages/board-comments">留言管理</a>
+                    {{end}}
+                    {{if $.CanManageUsers}}
+                    <form method="post" action="/admin/pages/delete" onsubmit="return confirm('确认删除这个板块吗？');">
+                        <input type="hidden" name="id" value="{{.ID}}">
+                        <button type="submit">删除</button>
+                    </form>
+                    {{end}}
+                </span>
+            </div>
+            {{end}}
+            {{else}}
+            <div class="admin-row">
+                <span class="muted">暂无页面板块</span>
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+            {{end}}
+        </div>
+    </main>
+    <script>
+        (function () {
+            var form = document.getElementById('admin-page-order-form');
+            var idsInput = document.getElementById('admin-page-order-ids');
+            if (!form || !idsInput) return;
+
+            var rows = Array.prototype.slice.call(document.querySelectorAll('.page-order-row'));
+            if (!rows.length) return;
+
+            var dragging = null;
+            function refreshIds() {
+                var sorted = Array.prototype.map.call(document.querySelectorAll('.page-order-row'), function (row) {
+                    return row.getAttribute('data-page-id');
+                });
+                idsInput.value = sorted.join(',');
+            }
+
+            rows.forEach(function (row) {
+                row.addEventListener('dragstart', function () {
+                    dragging = row;
+                    row.classList.add('dragging');
+                });
+                row.addEventListener('dragend', function () {
+                    row.classList.remove('dragging');
+                    refreshIds();
+                });
+                row.addEventListener('dragover', function (event) {
+                    event.preventDefault();
+                    if (!dragging || dragging === row) return;
+                    var rect = row.getBoundingClientRect();
+                    var after = (event.clientY - rect.top) > rect.height / 2;
+                    var parent = row.parentNode;
+                    parent.insertBefore(dragging, after ? row.nextSibling : row);
+                });
+            });
+
+            form.addEventListener('submit', function () {
+                refreshIds();
+            });
+            refreshIds();
+        })();
+    </script>
+</body>
+</html>
+{{end}}

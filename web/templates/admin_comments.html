@@ -1,0 +1,62 @@
+{{define "admin_comments"}}
+<!doctype html>
+<html lang="zh-CN">
+{{template "admin_head" .}}
+<body class="admin">
+    {{template "admin_nav" .}}
+    <main class="admin-main">
+        <div class="admin-header">
+            <div>
+                <h1>留言管理</h1>
+                <p class="muted">支持查看 IP、隐藏/显示和删除留言</p>
+            </div>
+        </div>
+        {{if .Flash}}
+        <div class="flash">{{.Flash}}</div>
+        {{end}}
+        <div class="admin-table admin-comments-table">
+            <div class="admin-row admin-row-head admin-comment-row">
+                <div>作者 / IP</div>
+                <div>留言内容</div>
+                <div>互动</div>
+                <div>状态</div>
+                <div>操作</div>
+            </div>
+            {{if .Comments}}
+            {{range .Comments}}
+            <div class="admin-row admin-comment-row">
+                <div class="comment-author-cell">
+                    <strong>{{.Author}}</strong>
+                    <small>{{.IP}}</small>
+                    <small>{{formatDate .CreatedAt}}</small>
+                </div>
+                <div class="comment-snippet">{{.Content}}</div>
+                <div class="comment-votes">👍 {{.Likes}} / 👎 {{.Dislikes}}</div>
+                <div>{{if .IsHidden}}已隐藏{{else}}展示中{{end}}</div>
+                <div class="actions">
+                    <form method="post" action="/admin/comments/toggle">
+                        <input type="hidden" name="id" value="{{.ID}}">
+                        <input type="hidden" name="action" value="{{if .IsHidden}}show{{else}}hide{{end}}">
+                        <button type="submit">{{if .IsHidden}}显示{{else}}隐藏{{end}}</button>
+                    </form>
+                    <form method="post" action="/admin/comments/delete" onsubmit="return confirm('确认删除这条留言吗？');">
+                        <input type="hidden" name="id" value="{{.ID}}">
+                        <button type="submit">删除</button>
+                    </form>
+                </div>
+            </div>
+            {{end}}
+            {{else}}
+            <div class="admin-row admin-comment-row">
+                <div class="muted">暂无留言</div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+            </div>
+            {{end}}
+        </div>
+    </main>
+</body>
+</html>
+{{end}}

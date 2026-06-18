@@ -1,0 +1,162 @@
+{{define "admin_users"}}
+<!doctype html>
+<html lang="zh-CN">
+{{template "admin_head" .}}
+<body class="admin">
+    {{template "admin_nav" .}}
+    <main class="admin-main">
+        <div class="admin-header">
+            <h2>用户管理</h2>
+        </div>
+        {{if .Flash}}<div class="flash">{{.Flash}}</div>{{end}}
+
+        <div class="admin-split">
+            <section class="admin-card">
+                <h3>已有用户</h3>
+                <div class="admin-table">
+                    <div class="admin-row admin-row-head">
+                        <span>显示名</span>
+                        <span>状态</span>
+                        <span>操作</span>
+                    </div>
+                    {{if .Users}}
+                    {{range .Users}}
+                    <div class="admin-row">
+                        <span>{{.DisplayName}}</span>
+                        <span>{{if .IsBanned}}已封禁{{else}}正常{{end}}</span>
+                        <span><a class="btn ghost btn-sm" href="/admin/users?uid={{.ID}}">查看详细信息</a></span>
+                    </div>
+                    {{end}}
+                    {{else}}
+                    <div class="admin-row"><span class="muted">暂无用户</span><span></span><span></span></div>
+                    {{end}}
+                </div>
+            </section>
+
+            <section class="admin-card">
+                <h3>用户详细信息</h3>
+                {{if .SelectedUser}}
+                <div class="user-detail-meta">
+                    <p><strong>用户名：</strong>{{.SelectedUser.Username}}</p>
+                    <p><strong>显示名：</strong>{{.SelectedUser.DisplayName}}</p>
+                    <p><strong>角色：</strong>{{if eq .SelectedUser.Role "owner"}}站长{{else if eq .SelectedUser.Role "maintainer"}}维护{{else}}访问者{{end}}</p>
+                    <p><strong>邮箱：</strong>{{if .SelectedUser.Email}}{{.SelectedUser.Email}}{{else}}-{{end}} {{if .SelectedUser.EmailVerified}}(已验证){{else}}(未验证){{end}}</p>
+                    <p><strong>最后登录 IP：</strong>{{if .SelectedUser.LastLoginIP}}{{.SelectedUser.LastLoginIP}}{{else}}-{{end}}</p>
+                    <p><strong>最后登录时间：</strong>{{if .SelectedUser.LastLoginAt.IsZero}}从未登录{{else}}{{formatDate .SelectedUser.LastLoginAt}}{{end}}</p>
+                    <p><strong>封禁状态：</strong>{{if .SelectedUser.IsBanned}}已封禁（{{if .SelectedUser.BannedReason}}{{.SelectedUser.BannedReason}}{{else}}无原因{{end}}）{{else}}正常{{end}}</p>
+                </div>
+
+                {{if and .User (eq .SelectedUser.ID .User.ID)}}
+                <p class="muted">当前登录站长不能在此页面修改自己的资料和权限。</p>
+                {{else}}
+                <form class="admin-form" method="post" action="/admin/users">
+                    <input type="hidden" name="action" value="update_profile">
+                    <input type="hidden" name="id" value="{{.SelectedUser.ID}}">
+                    <label><span>用户名</span><input type="text" name="username" value="{{.SelectedUser.Username}}" required></label>
+                    <label><span>显示名</span><input type="text" name="display_name" value="{{.SelectedUser.DisplayName}}" required></label>
+                    <label><span>站长密码验证</span><input type="password" name="owner_password" required></label>
+                    <div class="form-actions"><button type="submit">保存资料</button></div>
+                </form>
+
+                <form class="admin-form" method="post" action="/admin/users">
+                    <input type="hidden" name="action" value="update_role">
+                    <input type="hidden" name="id" value="{{.SelectedUser.ID}}">
+                    <label>
+                        <span>角色</span>
+                        <select name="role">
+                            <option value="owner" {{if eq .SelectedUser.Role "owner"}}selected{{end}}>站长</option>
+                            <option value="maintainer" {{if eq .SelectedUser.Role "maintainer"}}selected{{end}}>维护</option>
+                            <option value="visitor" {{if eq .SelectedUser.Role "visitor"}}selected{{end}}>访问者</option>
+                        </select>
+                    </label>
+                    <label><span>站长密码验证</span><input type="password" name="owner_password" required></label>
+                    <div class="form-actions"><button type="submit">更新角色</button></div>
+                </form>
+
+                <form class="admin-form" method="post" action="/admin/users">
+                    <input type="hidden" name="action" value="reset_password">
+                    <input type="hidden" name="id" value="{{.SelectedUser.ID}}">
+                    <label><span>新密码</span><input type="password" name="new_password" minlength="6" required></label>
+                    <label><span>站长密码验证</span><input type="password" name="owner_password" required></label>
+                    <div class="form-actions"><button type="submit">重置密码</button></div>
+                </form>
+
+                <form class="admin-form" method="post" action="/admin/users">
+                    <input type="hidden" name="action" value="set_ban">
+                    <input type="hidden" name="id" value="{{.SelectedUser.ID}}">
+                    <label>
+                        <span>封禁开关</span>
+                        <select name="ban">
+                            <option value="0" {{if not .SelectedUser.IsBanned}}selected{{end}}>解除封禁</option>
+                            <option value="1" {{if .SelectedUser.IsBanned}}selected{{end}}>封禁用户</option>
+                        </select>
+                    </label>
+                    <label><span>封禁原因（封禁时必填）</span><input type="text" name="ban_reason" placeholder="违规内容/恶意行为等"></label>
+                    <label><span>站长密码验证</span><input type="password" name="owner_password" required></label>
+                    <div class="form-actions"><button type="submit">保存封禁状态</button></div>
+                </form>
+
+                <form class="admin-form" method="post" action="/admin/users" onsubmit="return confirm('确认删除该用户？此操作不可恢复。');">
+                    <input type="hidden" name="action" value="delete_user">
+                    <input type="hidden" name="id" value="{{.SelectedUser.ID}}">
+                    <label><span>站长密码验证</span><input type="password" name="owner_password" required></label>
+                    <div class="form-actions"><button class="danger" type="submit">删除用户</button></div>
+                </form>
+                {{end}}
+                {{else}}
+                <p class="muted">请先从左侧点击“查看详细信息”。</p>
+                {{end}}
+            </section>
+        </div>
+
+        <section class="admin-card user-create-card">
+            <h3>新增用户</h3>
+            <form class="admin-form" method="post" action="/admin/users">
+                <input type="hidden" name="action" value="create">
+                <label><span>用户名</span><input type="text" name="username" required></label>
+                <label><span>显示名</span><input type="text" name="display_name" required></label>
+                <label><span>初始密码</span><input type="password" name="password" minlength="6" required></label>
+                <label>
+                    <span>初始角色</span>
+                    <select name="role">
+                        <option value="visitor">访问者</option>
+                        <option value="maintainer">维护</option>
+                        <option value="owner">站长</option>
+                    </select>
+                </label>
+                <label><span>站长密码验证</span><input type="password" name="owner_password" required></label>
+                <div class="form-actions"><button type="submit">创建用户</button></div>
+            </form>
+        </section>
+
+        <section class="admin-card user-audit-card">
+            <h3>最近用户管理审计日志</h3>
+            <div class="admin-table audit-log-table">
+                <div class="admin-row admin-row-head audit-log-row">
+                    <span>时间</span>
+                    <span>操作人</span>
+                    <span>目标账户</span>
+                    <span>动作</span>
+                    <span>详情</span>
+                    <span>来源 IP</span>
+                </div>
+                {{if .AuditLogs}}
+                {{range .AuditLogs}}
+                <div class="admin-row audit-log-row">
+                    <span>{{formatDate .CreatedAt}}</span>
+                    <span>{{.ActorUsername}}</span>
+                    <span>{{.TargetUsername}}</span>
+                    <span>{{.Action}}</span>
+                    <span>{{.Detail}}</span>
+                    <span>{{if .ActorIP}}{{.ActorIP}}{{else}}-{{end}}</span>
+                </div>
+                {{end}}
+                {{else}}
+                <div class="admin-row audit-log-row"><span class="muted">暂无日志</span><span></span><span></span><span></span><span></span><span></span></div>
+                {{end}}
+            </div>
+        </section>
+    </main>
+</body>
+</html>
+{{end}}

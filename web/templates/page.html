@@ -1,0 +1,111 @@
+﻿{{define "page"}}
+<!doctype html>
+<html lang="zh-CN">
+{{template "head" .}}
+<body class="site">
+    {{template "site_nav" .}}
+    <header class="sub-hero">
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+            <h1>{{.Post.Title}}</h1>
+            <div class="post-meta">
+                <span>📅 {{formatDate .Post.PublishedAt}}</span>
+            </div>
+        </div>
+    </header>
+    <main class="layout">
+        {{template "sidebar" .}}
+        <section class="content">
+            <article class="glass-card post-detail">
+                <div class="post-content">
+                    {{markdown .Post.Content}}
+                </div>
+            </article>
+            {{if eq .Post.Slug "board"}}
+            {{if .User}}
+            <article class="glass-card board-card" id="guestbook">
+                <div class="comment-header">
+                    <div>
+                        <h2>留言板</h2>
+                        <p class="muted">可以选择匿名，或者填上你的名字</p>
+                    </div>
+                </div>
+                {{if .Flash}}
+                <div class="alert">{{.Flash}}</div>
+                {{end}}
+                <form class="comment-form" action="/board#guestbook" method="post">
+                    <div class="form-row">
+                        <label for="name">昵称</label>
+                        <input type="text" id="name" name="name" placeholder="想署名的话填这里" value="{{.CommentFormName}}">
+                    </div>
+                    <div class="form-row inline">
+                        <label class="checkbox">
+                            <input type="checkbox" name="anonymous" value="1" {{if .CommentAnonymous}}checked{{end}}>
+                            匿名留言
+                        </label>
+                        <span class="hint">不勾选请填写昵称</span>
+                    </div>
+                    <div class="form-row">
+                        <label for="content">留言内容</label>
+                        <textarea id="content" name="content" rows="4" placeholder="想说的话..." required>{{.CommentFormContent}}</textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit">发布留言</button>
+                    </div>
+                </form>
+                <div class="comment-list">
+                    <div class="comment-list-title">最近的留言</div>
+                    {{if .Comments}}
+                    {{range .Comments}}
+                    <div class="comment-item">
+                        <div class="comment-head">
+                            <img class="comment-avatar" src="{{if .IsAnonymous}}/static/img/avatar.svg{{else if .AvatarURL}}{{.AvatarURL}}{{else}}/static/img/avatar.svg{{end}}" alt="头像">
+                            <div class="comment-meta">
+                                <span class="comment-author">{{.Author}}</span>
+                                {{if .IsAnonymous}}<span class="comment-tag">匿名</span>{{end}}
+                                <span class="comment-date">{{formatDate .CreatedAt}}</span>
+                            </div>
+                        </div>
+                        <p class="comment-text">{{.Content}}</p>
+                        <form class="comment-react" action="/board/react#guestbook" method="post">
+                            <input type="hidden" name="comment_id" value="{{.ID}}">
+                            <button type="submit" name="action" value="like">👍 点赞 {{.Likes}}</button>
+                            <button type="submit" name="action" value="dislike">👎 点踩 {{.Dislikes}}</button>
+                        </form>
+                        {{if $.User}}
+                        <form class="comment-react" action="/report" method="post">
+                            <input type="hidden" name="type" value="comment">
+                            <input type="hidden" name="comment_id" value="{{.ID}}">
+                            <input type="hidden" name="next" value="/board#guestbook">
+                            <input type="text" name="reason" placeholder="举报原因（可选）">
+                            <button class="danger" type="submit">举报</button>
+                        </form>
+                        {{end}}
+                    </div>
+                    {{end}}
+                    {{else}}
+                    <p class="muted">还没有留言，快来留下第一条吧。</p>
+                    {{end}}
+                </div>
+            </article>
+            {{else}}
+            <article class="glass-card board-card" id="guestbook">
+                <div class="comment-header">
+                    <div>
+                        <h2>留言板</h2>
+                        <p class="muted">留言板仅对已登录用户开放</p>
+                    </div>
+                </div>
+                <div class="alert">请先登录后再留言和查看留言内容。</div>
+                <div class="form-actions">
+                    <a class="btn" href="/login?next=/board">前往登录</a>
+                </div>
+            </article>
+            {{end}}
+            {{end}}
+        </section>
+    </main>
+    {{template "footer" .}}
+</body>
+</html>
+{{end}}

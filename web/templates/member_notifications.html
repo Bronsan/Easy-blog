@@ -1,0 +1,54 @@
+{{define "member_notifications"}}
+<!doctype html>
+<html lang="zh-CN">
+{{template "admin_head" .}}
+<body class="admin">
+    {{template "member_nav" .}}
+    <main class="admin-main">
+        <div class="admin-header">
+            <h2>通知中心</h2>
+        </div>
+        {{if .Flash}}<div class="flash">{{.Flash}}</div>{{end}}
+
+        <form class="admin-form compact" method="post" action="/member/notifications/read">
+            <input type="hidden" name="action" value="all">
+            <div class="form-actions"><button type="submit">全部标记已读</button></div>
+        </form>
+
+        <div class="admin-table">
+            <div class="admin-row admin-row-head">
+                <span>时间</span>
+                <span>标题</span>
+                <span>内容</span>
+                <span>状态</span>
+                <span>操作</span>
+            </div>
+            {{if .Notifications}}
+            {{range .Notifications}}
+            <div class="admin-row">
+                <span>{{formatDate .CreatedAt}}</span>
+                <span>{{.Title}}</span>
+                <span>{{.Content}}</span>
+                <span>{{if .IsRead}}已读{{else}}未读{{end}}</span>
+                <span>
+                    {{if not .IsRead}}
+                    <form class="admin-form compact" method="post" action="/member/notifications/read">
+                        <input type="hidden" name="id" value="{{.ID}}">
+                        <button type="submit">标记已读</button>
+                    </form>
+                    {{else}}
+                    <span class="muted">-</span>
+                    {{end}}
+                </span>
+            </div>
+            {{end}}
+            {{else}}
+            <div class="admin-row">
+                <span class="muted">暂无通知</span><span></span><span></span><span></span><span></span>
+            </div>
+            {{end}}
+        </div>
+    </main>
+</body>
+</html>
+{{end}}

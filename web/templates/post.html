@@ -1,0 +1,49 @@
+﻿{{define "post"}}
+<!doctype html>
+<html lang="zh-CN">
+{{template "head" .}}
+<body class="site">
+    {{template "site_nav" .}}
+    <header class="sub-hero">
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+            <h1>{{.Post.Title}}</h1>
+            <div class="post-meta">
+                <span>发布时间：{{formatDate .Post.PublishedAt}}</span>
+                <span>浏览：{{.Post.Views}}</span>
+            </div>
+        </div>
+    </header>
+    <main class="layout">
+        {{template "sidebar" .}}
+        <section class="content">
+            {{if .Flash}}
+            <div class="alert">{{.Flash}}</div>
+            {{end}}
+            <article class="glass-card post-detail">
+                {{if .Post.CoverURL}}
+                <img class="post-detail-cover" src="{{.Post.CoverURL}}" alt="{{.Post.Title}}">
+                {{end}}
+                <div class="post-content">
+                    {{markdown .Post.Content}}
+                </div>
+                <div class="post-report-wrap">
+                    {{if .User}}
+                    <form class="comment-react post-report-form" action="/post/report" method="post">
+                        <input type="hidden" name="type" value="post">
+                        <input type="hidden" name="post_id" value="{{.Post.ID}}">
+                        <input type="hidden" name="next" value="/post/{{.Post.Slug}}">
+                        <input type="text" name="reason" placeholder="举报原因（可选）">
+                        <button class="danger" type="submit">举报文章</button>
+                    </form>
+                    {{else}}
+                    <p class="muted">登录后可举报文章内容。</p>
+                    {{end}}
+                </div>
+            </article>
+        </section>
+    </main>
+    {{template "footer" .}}
+</body>
+</html>
+{{end}}

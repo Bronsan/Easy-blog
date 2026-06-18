@@ -1,0 +1,59 @@
+﻿{{define "member_dashboard"}}
+<!doctype html>
+<html lang="zh-CN">
+{{template "admin_head" .}}
+<body class="admin">
+    {{template "member_nav" .}}
+    <main class="admin-main">
+        {{if .Flash}}<div class="flash">{{.Flash}}</div>{{end}}
+        <section class="admin-grid">
+            <div class="admin-card">
+                <h3>我的文章数量</h3>
+                <p class="stat">{{.Stats.Posts}}</p>
+            </div>
+            <div class="admin-card">
+                <h3>我的文章总浏览</h3>
+                <p class="stat">{{.Stats.Views}}</p>
+            </div>
+            <div class="admin-card">
+                <h3>快捷入口</h3>
+                <div class="quick-links">
+                    <a href="/member/posts/new">新建文章</a>
+                    <a href="/member/pages/new">新建页面</a>
+                    <a href="/member/comments">我的留言</a>
+                    <a href="/member/profile">个人设置</a>
+                    <a href="/">返回前台</a>
+                </div>
+            </div>
+        </section>
+
+        <section class="admin-card" style="margin-top:18px;">
+            <h3>最近头像审核记录</h3>
+            <div class="admin-table">
+                <div class="admin-row admin-row-head">
+                    <span>提交时间</span>
+                    <span>状态</span>
+                    <span>备注</span>
+                    <span>图片</span>
+                </div>
+                {{if .AvatarRequests}}
+                {{range .AvatarRequests}}
+                <div class="admin-row">
+                    <span>{{formatDate .CreatedAt}}</span>
+                    <span>{{if eq .Status "pending"}}待审核{{else if eq .Status "approved"}}已通过{{else}}已驳回{{end}}</span>
+                    <span>{{if .ReviewNote}}{{.ReviewNote}}{{else}}-{{end}}</span>
+                    <span><img class="avatar-review-image" src="{{.AvatarURL}}" alt="头像申请图"></span>
+                </div>
+                {{end}}
+                {{else}}
+                <div class="admin-row">
+                    <span class="muted">暂无头像申请记录</span>
+                    <span></span><span></span><span></span>
+                </div>
+                {{end}}
+            </div>
+        </section>
+    </main>
+</body>
+</html>
+{{end}}

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="480" viewBox="0 0 900 480">
+  <defs>
+    <linearGradient id="c1" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#2f2f66"/>
+      <stop offset="100%" stop-color="#6f8edb"/>
+    </linearGradient>
+  </defs>
+  <rect width="900" height="480" fill="url(#c1)"/>
+  <g opacity="0.4">
+    <circle cx="160" cy="120" r="90" fill="#ffffff"/>
+    <circle cx="720" cy="320" r="120" fill="#ffffff"/>
+  </g>
+  <text x="60" y="420" fill="#ffffff" font-size="44" font-family="serif">LM Studio Local</text>
+</svg>

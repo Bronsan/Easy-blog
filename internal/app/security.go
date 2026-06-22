@@ -123,12 +123,30 @@ func (a *App) csrfGuard(next http.Handler) http.Handler {
 }
 
 // securityHeaders 统一设置常见安全响应头。
+// CSP 收紧到 'self' + 必要的内联样式/脚本豁免，HSTS 仅在 HTTPS 下生效。
 func (a *App) securityHeaders(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("X-Frame-Options", "SAMEORIGIN")
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		w.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
-		w.Header().Set("Content-Security-Policy", "frame-ancestors 'self';")
+		// CSP：限制脚本/样式/图片来源，防止 Markdown XSS 后的纵深防御。
+		// 'unsafe-inline' 用于 <style> 内联（模板中 :root CSS 变量）和脚本（如需）。
+		w.Header().Set("Content-Security-Policy",
+			"default-src 'self'; "+
+				"script-src 'self' 'unsafe-inline'; "+
+				"style-src 'self' 'unsafe-inline'; "+
+				"img-src 'self' https: data:; "+
+				"font-src 'self' data:; "+
+				"connect-src 'self'; "+
+				"frame-ancestors 'self'; "+
+				"base-uri 'self'; "+
+				"form-action 'self'")
+		// HSTS：仅对 HTTPS 请求生效，强制浏览器后续使用 HTTPS 访问站点。
+		if r.TLS != nil || strings.EqualFold(r.Header.Get("X-Forwarded-Proto"), "https") {
+			w.Header().Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+		}
+		// 禁用不必要的浏览器功能，降低 XSS 攻击面。
+		w.Header().Set("Permissions-Policy", "geolocation=(), microphone=(), camera=()")
 		next.ServeHTTP(w, r)
 	})
 }

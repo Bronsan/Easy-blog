@@ -84,25 +84,30 @@ func (a *App) requireRoles(roles ...string) func(http.HandlerFunc) http.HandlerF
 }
 
 // setSessionCookie 写入登录会话 Cookie。
-func setSessionCookie(w http.ResponseWriter, sessionID string, expiresAt int64) {
+// Secure 标志根据请求是否为 HTTPS 动态判断：HTTPS 下启用，HTTP 本地开发不启用。
+func setSessionCookie(w http.ResponseWriter, r *http.Request, sessionID string, expiresAt int64) {
+	secure := r.TLS != nil || strings.EqualFold(r.Header.Get("X-Forwarded-Proto"), "https")
 	http.SetCookie(w, &http.Cookie{
 		Name:     sessionCookieName,
 		Value:    sessionID,
 		Path:     "/",
 		Expires:  time.Unix(expiresAt, 0),
 		HttpOnly: true,
+		Secure:   secure,
 		SameSite: http.SameSiteLaxMode,
 	})
 }
 
 // clearSessionCookie 清除 Cookie。
-func clearSessionCookie(w http.ResponseWriter) {
+func clearSessionCookie(w http.ResponseWriter, r *http.Request) {
+	secure := r.TLS != nil || strings.EqualFold(r.Header.Get("X-Forwarded-Proto"), "https")
 	http.SetCookie(w, &http.Cookie{
 		Name:     sessionCookieName,
 		Value:    "",
 		Path:     "/",
 		Expires:  time.Unix(0, 0),
 		HttpOnly: true,
+		Secure:   secure,
 		SameSite: http.SameSiteLaxMode,
 		MaxAge:   -1,
 	})

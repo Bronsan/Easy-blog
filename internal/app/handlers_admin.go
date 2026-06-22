@@ -103,7 +103,7 @@ func (a *App) handleAdminLogin(w http.ResponseWriter, r *http.Request) {
 
 		a.authLimiter.onSuccess(ip)
 		_ = a.store.UpdateLastLogin(user.ID, ip)
-		setSessionCookie(w, sessionID, expiresAt)
+		setSessionCookie(w, r, sessionID, expiresAt)
 		if user.Role == data.RoleVisitor {
 			http.Redirect(w, r, "/member", http.StatusFound)
 			return
@@ -122,7 +122,7 @@ func (a *App) handleAdminLogout(w http.ResponseWriter, r *http.Request) {
 	if err == nil {
 		_ = a.store.DeleteSession(cookie.Value)
 	}
-	clearSessionCookie(w)
+	clearSessionCookie(w, r)
 	http.Redirect(w, r, "/admin/login", http.StatusFound)
 }
 
@@ -407,6 +407,13 @@ func (a *App) handleAdminPageDelete(w http.ResponseWriter, r *http.Request) {
 	}
 	_ = a.store.DeletePost(id)
 	http.Redirect(w, r, "/admin/pages?ok=1", http.StatusFound)
+}
+
+// handleAdminSessions 展示所有用户的会话记录（含真实 IP 与设备信息），仅站长可访问。
+func (a *App) handleAdminSessions(w http.ResponseWriter, r *http.Request) {
+	viewData := a.baseData(r, "admin-sessions")
+	viewData.AdminSessions, _ = a.store.ListAllSessions(200)
+	a.renderTemplate(w, "admin_sessions", viewData)
 }
 
 // handleAdminUsers 管理用户、角色、密码与封禁状态。
@@ -740,6 +747,20 @@ func (a *App) handleAdminAppearance(w http.ResponseWriter, r *http.Request) {
 			allowedAdminBackgrounds,
 			defaultAdminBackground,
 		)
+		// 自定义图片 URL 优先于单选按钮。
+		if customSiteURL := strings.TrimSpace(r.FormValue("site_background_url")); customSiteURL != "" {
+			if strings.HasPrefix(customSiteURL, "https://") {
+				siteBackground = fmt.Sprintf("url('%s') center / cover no-repeat fixed", customSiteURL)
+			}
+		}
+		if customAdminURL := strings.TrimSpace(r.FormValue("admin_background_url")); customAdminURL != "" {
+			if strings.HasPrefix(customAdminURL, "https://") {
+				adminBackground = fmt.Sprintf("url('%s') center / cover no-repeat fixed", customAdminURL)
+			}
+		}
+
+		siteBlur := normalizeBlurSetting(r.FormValue("site_background_blur"))
+		adminBlur := normalizeBlurSetting(r.FormValue("admin_background_blur"))
 
 		if err := a.store.SetSetting("site_background", siteBackground); err != nil {
 			viewData.Flash = "Failed to save site background."
@@ -748,6 +769,16 @@ func (a *App) handleAdminAppearance(w http.ResponseWriter, r *http.Request) {
 		}
 		if err := a.store.SetSetting("admin_background", adminBackground); err != nil {
 			viewData.Flash = "Failed to save admin background."
+			a.renderTemplate(w, "admin_appearance", viewData)
+			return
+		}
+		if err := a.store.SetSetting("site_background_blur", siteBlur); err != nil {
+			viewData.Flash = "Failed to save site blur."
+			a.renderTemplate(w, "admin_appearance", viewData)
+			return
+		}
+		if err := a.store.SetSetting("admin_background_blur", adminBlur); err != nil {
+			viewData.Flash = "Failed to save admin blur."
 			a.renderTemplate(w, "admin_appearance", viewData)
 			return
 		}

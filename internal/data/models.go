@@ -136,6 +136,18 @@ type SessionInfo struct {
 	ExpiresAt time.Time
 }
 
+// AdminSessionInfo 用于站长后台展示所有用户的会话记录。
+type AdminSessionInfo struct {
+	ID          string
+	UserID      int64
+	Username    string
+	DisplayName string
+	IP          string
+	UserAgent   string
+	CreatedAt   time.Time
+	ExpiresAt   time.Time
+}
+
 const (
 	CommentReportStatusPending  = "pending"
 	CommentReportStatusApproved = "approved"

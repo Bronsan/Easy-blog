@@ -1,9 +1,9 @@
-{{define "member_sessions"}}
+{{define "admin_sessions"}}
 <!doctype html>
 <html lang="zh-CN">
 {{template "admin_head" .}}
 <body class="admin">
-    {{template "member_nav" .}}
+    {{template "admin_nav" .}}
     <main class="admin-main">
         <div class="admin-header">
             <h2>会话管理</h2>
@@ -11,25 +11,20 @@
         {{if .Flash}}<div class="flash">{{.Flash}}</div>{{end}}
         <div class="admin-table">
             <div class="admin-row admin-row-head">
+                <span>用户</span>
                 <span>创建时间</span>
                 <span>到期时间</span>
                 <span>IP</span>
                 <span>设备信息</span>
-                <span>操作</span>
             </div>
-            {{if .Sessions}}
-            {{range .Sessions}}
+            {{if .AdminSessions}}
+            {{range .AdminSessions}}
             <div class="admin-row">
+                <span>{{if .DisplayName}}{{.DisplayName}}{{else}}{{.Username}}{{end}}</span>
                 <span>{{formatDate .CreatedAt}}</span>
                 <span>{{formatDate .ExpiresAt}}</span>
                 <span>{{if .IP}}{{.IP}}{{else}}-{{end}}</span>
                 <span>{{if .UserAgent}}{{parseUA .UserAgent}}{{else}}-{{end}}</span>
-                <span>
-                    <form class="admin-form compact" method="post" action="/member/sessions/revoke" onsubmit="return confirm('确认下线该会话？');">
-                        <input type="hidden" name="session_id" value="{{.ID}}">
-                        <button class="danger" type="submit">下线</button>
-                    </form>
-                </span>
             </div>
             {{end}}
             {{else}}

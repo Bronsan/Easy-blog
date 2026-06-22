@@ -21,6 +21,19 @@ func (a *App) baseData(r *http.Request, nav string) ViewData {
 	adminBackground := normalizeBackgroundSetting(settings["admin_background"], allowedAdminBackgrounds, defaultAdminBackground)
 	settings["site_background"] = siteBackground
 	settings["admin_background"] = adminBackground
+	settings["site_background_blur"] = normalizeBlurSetting(settings["site_background_blur"])
+	settings["admin_background_blur"] = normalizeBlurSetting(settings["admin_background_blur"])
+
+	// 热门文章与最近留言作为全站公共数据加载，供侧栏与首页模块直接使用。
+	// 容错处理：查询失败时返回空切片，不影响页面渲染。
+	hotPosts, _ := a.store.ListTopPosts("post", 5)
+	if hotPosts == nil {
+		hotPosts = []data.Post{}
+	}
+	whispers, _ := a.store.ListRecentComments(5)
+	if whispers == nil {
+		whispers = []data.Comment{}
+	}
 
 	var user = (*data.User)(nil)
 	sidebarName := "访客"
@@ -74,9 +87,13 @@ func (a *App) baseData(r *http.Request, nav string) ViewData {
 		Settings:           settings,
 		SiteBackgroundCSS:  template.CSS(siteBackground),
 		AdminBackgroundCSS: template.CSS(adminBackground),
-		User:               user,
-		Nav:                nav,
-		Stats:              stats,
+		SiteBackgroundBlur:  settings["site_background_blur"],
+		AdminBackgroundBlur: settings["admin_background_blur"],
+		User:                user,
+		Nav:                 nav,
+		Stats:               stats,
+		HotPosts:           hotPosts,
+		Whispers:           whispers,
 		SearchFrom:         searchFrom,
 		SearchScope:        searchScope,
 		SearchScopeLabel:   searchScopeLabel,
@@ -96,7 +113,8 @@ func (a *App) baseData(r *http.Request, nav string) ViewData {
 // normalizeBackgroundSetting 统一规范背景配置值：
 // 1) 允许白名单中的纯色/渐变/内置图；
 // 2) 允许本地上传目录中的图片背景；
-// 3) 其他值一律回退到默认值，防止无效值导致背景不生效。
+// 3) 允许自定义图片 URL 背景（仅 https 链接）；
+// 4) 其他值一律回退到默认值，防止无效值导致背景不生效。
 func normalizeBackgroundSetting(raw string, allowed map[string]struct{}, fallback string) string {
 	choice := strings.TrimSpace(raw)
 	if choice == "" {
@@ -108,7 +126,48 @@ func normalizeBackgroundSetting(raw string, allowed map[string]struct{}, fallbac
 	if isAllowedUploadBackground(choice) {
 		return choice
 	}
+	if isAllowedCustomURLBackground(choice) {
+		return choice
+	}
 	return fallback
+}
+
+// normalizeBlurSetting 规范化高斯模糊值，范围 0-30px。
+func normalizeBlurSetting(raw string) string {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return "0"
+	}
+	n, err := strconv.Atoi(raw)
+	if err != nil || n < 0 {
+		return "0"
+	}
+	if n > 30 {
+		n = 30
+	}
+	return strconv.Itoa(n)
+}
+
+// isAllowedCustomURLBackground 校验自定义图片 URL 背景字符串格式，
+// 仅允许 https:// 开头的图片链接，防止注入。
+func isAllowedCustomURLBackground(value string) bool {
+	value = strings.TrimSpace(value)
+	if !strings.HasPrefix(value, "url(https://") && !strings.HasPrefix(value, "url('https://") {
+		return false
+	}
+	// 必须以固定的后缀结尾，确保格式可控。
+	suffixes := []string{
+		") center / cover no-repeat fixed",
+		") center top / cover no-repeat fixed",
+		"') center / cover no-repeat fixed",
+		"') center top / cover no-repeat fixed",
+	}
+	for _, s := range suffixes {
+		if strings.HasSuffix(value, s) {
+			return true
+		}
+	}
+	return false
 }
 
 // isAllowedUploadBackground 校验上传背景字符串格式，仅允许 /static/uploads/backgrounds 下的文件。
@@ -269,4 +328,55 @@ func backendHome(user *data.User) string {
 		return "/member"
 	}
 	return "/admin"
+}
+
+// viewedCookieName 用于浏览量去重的 Cookie 名。
+// Cookie 值为已浏览文章 ID 的逗号分隔列表，24 小时过期。
+const viewedCookieName = "blog_viewed"
+
+// hasViewedRecently 判断当前会话是否已在去重窗口内浏览过指定文章。
+// Cookie 值格式："postID1,postID2,..."，简单解析即可。
+func hasViewedRecently(r *http.Request, postID int64) bool {
+	cookie, err := r.Cookie(viewedCookieName)
+	if err != nil {
+		return false
+	}
+	idStr := strconv.FormatInt(postID, 10)
+	for _, part := range strings.Split(cookie.Value, ",") {
+		if strings.TrimSpace(part) == idStr {
+			return true
+		}
+	}
+	return false
+}
+
+// markViewed 将文章 ID 写入浏览去重 Cookie，24 小时过期。
+// 仅保留最近 50 篇文章的记录，避免 Cookie 体积过大。
+func markViewed(w http.ResponseWriter, r *http.Request, postID int64) {
+	cookie, err := r.Cookie(viewedCookieName)
+	var ids []string
+	if err == nil && cookie.Value != "" {
+		ids = strings.Split(cookie.Value, ",")
+	}
+	idStr := strconv.FormatInt(postID, 10)
+	// 去重：移除已有记录后追加到末尾。
+	filtered := make([]string, 0, len(ids)+1)
+	for _, id := range ids {
+		if strings.TrimSpace(id) != idStr && strings.TrimSpace(id) != "" {
+			filtered = append(filtered, strings.TrimSpace(id))
+		}
+	}
+	filtered = append(filtered, idStr)
+	// 限制记录数量，保留最新的 50 篇。
+	if len(filtered) > 50 {
+		filtered = filtered[len(filtered)-50:]
+	}
+	http.SetCookie(w, &http.Cookie{
+		Name:     viewedCookieName,
+		Value:    strings.Join(filtered, ","),
+		Path:     "/",
+		MaxAge:   86400, // 24 小时
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+	})
 }

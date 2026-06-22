@@ -6,7 +6,11 @@
     {{template "site_nav" .}}
     <header class="hero">
         <div class="hero-overlay"></div>
+        <div class="hero-glow hero-glow-indigo"></div>
+        <div class="hero-glow hero-glow-pink"></div>
+        <div class="hero-glow hero-glow-purple"></div>
         <div class="hero-content">
+            <div class="hero-boot" id="heroBoot"></div>
             <p class="hero-motto">{{.Site.MottoCN}}</p>
             <p class="hero-motto-en">{{.Site.MottoEN}}</p>
         </div>
@@ -32,22 +36,62 @@
                 </div>
             </div>
             {{if .Posts}}
-                {{range .Posts}}
-                <article class="post-card">
-                    <a class="post-cover" href="/post/{{.Slug}}">
+                {{with index .Posts 0}}
+                <article class="latest-insight">
+                    <a class="li-cover" href="/post/{{.Slug}}">
+                        {{if .CoverURL}}
                         <img src="{{.CoverURL}}" alt="{{.Title}}">
+                        {{else}}
+                        <img src="/static/img/cover-1.svg" alt="{{.Title}}">
+                        {{end}}
                     </a>
-                    <div class="post-body">
-                        <h3><a href="/post/{{.Slug}}">{{.Title}}</a></h3>
-                        <div class="post-meta">
-                            <span>发布时间：{{formatDate .PublishedAt}}</span>
-                            <span>发布者：{{index $.PostAuthors .AuthorID}}</span>
-                            <span>浏览：{{.Views}}</span>
+                    <div class="li-body">
+                        <span class="li-tag">Latest Insight · {{formatDate .PublishedAt}}</span>
+                        <h3 class="li-title"><a href="/post/{{.Slug}}">{{.Title}}</a></h3>
+                        <p class="li-summary">{{.Summary}}</p>
+                        <div class="li-meta">
+                            <span>by {{index $.PostAuthors .AuthorID}}</span>
+                            <span>views {{.Views}}</span>
                         </div>
-                        <p>{{.Summary}}</p>
+                        <a class="btn li-read" href="/post/{{.Slug}}">阅读全文 →</a>
                     </div>
                 </article>
                 {{end}}
+                {{if gt (len .Posts) 1}}
+                <section class="records-section">
+                    <div class="records-head">
+                        <h2>近期记录</h2>
+                        <a class="records-more" href="/archive">查看全部 →</a>
+                    </div>
+                    <div class="timeline">
+                        {{range (slice .Posts 1)}}
+                        <div class="timeline-item">
+                            <span class="timeline-date">{{formatDate .PublishedAt}}</span>
+                            <a class="timeline-title" href="/post/{{.Slug}}">{{.Title}}</a>
+                            <p class="timeline-summary">{{.Summary}}</p>
+                        </div>
+                        {{end}}
+                    </div>
+                </section>
+                {{end}}
+                <section class="whispers-section">
+                    <div class="whispers-head">
+                        <h2>碎碎念</h2>
+                    </div>
+                    {{if .Whispers}}
+                    {{range .Whispers}}
+                    <div class="whisper-item">
+                        <span class="whisper-time">{{formatDate .CreatedAt}} · {{if .IsAnonymous}}匿名旅人{{else}}{{.Author}}{{end}}</span>
+                        <span class="whisper-text">{{.Content}}</span>
+                    </div>
+                    {{end}}
+                    {{else}}
+                    <div class="whisper-item">
+                        <span class="whisper-time">SYSTEM</span>
+                        <span class="whisper-text">还没有人留下碎碎念，去留言板写下第一条吧 → <a href="/board">留言板</a></span>
+                    </div>
+                    {{end}}
+                </section>
             {{else}}
                 <div class="glass-card">
                     <p class="muted">当前筛选下暂无文章。</p>

@@ -1,4 +1,4 @@
-﻿:root {
+:root {
     --bg: #f5f7f6;
     --card: #ffffff;
     --ink: #233136;
@@ -21,6 +21,20 @@ body.admin {
     background: var(--admin-bg, var(--bg));
     color: var(--ink);
     min-height: 100vh;
+    position: relative;
+}
+
+body.admin::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--admin-bg, var(--bg));
+    filter: blur(var(--admin-bg-blur, 0px));
+    z-index: -1;
+    transform: scale(1.05);
 }
 
 .muted {
@@ -315,6 +329,40 @@ body.admin {
     font-size: 12px;
     color: #4d5b60;
     text-align: center;
+}
+
+.bg-url-label,
+.bg-blur-label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 14px;
+    color: #54656c;
+}
+
+.bg-url-label input[type="url"] {
+    padding: 8px 10px;
+    border: 1px solid #d8e3e4;
+    border-radius: 8px;
+    font-size: 13px;
+    font-family: inherit;
+    background: #fff;
+}
+
+.bg-url-label input[type="url"]:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(11, 123, 105, 0.16);
+}
+
+.bg-blur-label input[type="range"] {
+    width: 100%;
+    accent-color: var(--accent);
+}
+
+.blur-value {
+    color: var(--accent);
+    font-weight: 700;
 }
 
 .upload-card {
@@ -727,6 +775,38 @@ body.admin {
 
 .profile-record-card {
     margin-top: 18px;
+}
+
+[data-theme="dark"] body.admin {
+    background-color: #13161c;
+    background-image: radial-gradient(ellipse at 20% 20%, rgba(61, 206, 176, 0.04), transparent);
+}
+[data-theme="dark"] .admin-nav {
+    background: rgba(24, 30, 42, 0.95);
+}
+[data-theme="dark"] .admin-card,
+[data-theme="dark"] .admin-table,
+[data-theme="dark"] .login-card,
+[data-theme="dark"] .profile-form-card {
+    background: rgba(30, 36, 50, 0.9);
+    backdrop-filter: blur(12px);
+    border-color: rgba(255, 255, 255, 0.07);
+}
+[data-theme="dark"] .profile-summary {
+    background: rgba(24, 30, 44, 0.8);
+}
+[data-theme="dark"] input,
+[data-theme="dark"] textarea,
+[data-theme="dark"] select {
+    background: rgba(20, 26, 38, 0.85);
+    color: #d6dee8;
+    border-color: rgba(255, 255, 255, 0.1);
+}
+[data-theme="dark"] .admin-row {
+    border-color: rgba(255, 255, 255, 0.06);
+}
+[data-theme="dark"] .login {
+    background: #13161c;
 }
 
 @media (max-width: 960px) {

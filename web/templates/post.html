@@ -1,4 +1,4 @@
-﻿{{define "post"}}
+{{define "post"}}
 <!doctype html>
 <html lang="zh-CN">
 {{template "head" .}}
@@ -11,9 +11,12 @@
             <div class="post-meta">
                 <span>发布时间：{{formatDate .Post.PublishedAt}}</span>
                 <span>浏览：{{.Post.Views}}</span>
+                <span>阅读时间：<span id="readingTime">计算中…</span></span>
+                <button class="share-btn" id="shareBtn">🔗 分享</button>
             </div>
         </div>
     </header>
+    <nav class="post-toc" id="postToc" aria-label="文章目录"></nav>
     <main class="layout">
         {{template "sidebar" .}}
         <section class="content">
@@ -41,9 +44,60 @@
                     {{end}}
                 </div>
             </article>
+
+            <!-- 致敬 XHBlogs：继续阅读模块 -->
+            {{if .HotPosts}}
+            <section class="related-posts">
+                <div class="related-head">
+                    <span class="bento-label">CONTINUE READING</span>
+                    <h2>继续阅读</h2>
+                </div>
+                <div class="related-grid">
+                    {{range $i, $p := .HotPosts}}
+                    {{if ne $p.ID $.Post.ID}}
+                    {{if lt $i 4}}
+                    <a class="glass-card related-card" href="/post/{{$p.Slug}}">
+                        <div class="glow-orb glow-orb-indigo" style="width:80px;height:80px;top:-20px;right:-20px;"></div>
+                        <span class="related-rank">{{add $i 1}}</span>
+                        <h3 class="related-title">{{$p.Title}}</h3>
+                        {{if $p.Summary}}
+                        <p class="related-summary">{{$p.Summary}}</p>
+                        {{end}}
+                        <div class="related-meta">
+                            <span>{{formatDate $p.PublishedAt}}</span>
+                            <span>{{$p.Views}} views</span>
+                        </div>
+                    </a>
+                    {{end}}
+                    {{end}}
+                    {{end}}
+                </div>
+            </section>
+            {{end}}
         </section>
     </main>
     {{template "footer" .}}
+
+    <!-- JSON-LD 结构化数据：帮助搜索引擎理解文章内容，富结果展示 -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "Article",
+        "headline": {{.Post.Title}},
+        "datePublished": "{{.Post.PublishedAt.Format "2006-01-02T15:04:05Z07:00"}}",
+        "dateModified": "{{.Post.UpdatedAt.Format "2006-01-02T15:04:05Z07:00"}}",
+        "description": {{if .Post.Summary}}{{.Post.Summary}}{{else}}{{.Site.Subtitle}}{{end}},
+        "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": "{{.SEOCanonical}}"
+        }{{if .Post.CoverURL}},
+        "image": "{{.Post.CoverURL}}"{{end}}{{if .Site.Title}},
+        "publisher": {
+            "@type": "Organization",
+            "name": "{{.Site.Title}}"
+        }{{end}}
+    }
+    </script>
 </body>
 </html>
 {{end}}

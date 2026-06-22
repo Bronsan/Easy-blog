@@ -1,4 +1,4 @@
-﻿{{define "archive"}}
+{{define "archive"}}
 <!doctype html>
 <html lang="zh-CN">
 {{template "head" .}}
@@ -14,14 +14,55 @@
     <main class="layout">
         {{template "sidebar" .}}
         <section class="content">
-            <div class="glass-card">
-                {{range .Posts}}
-                <div class="archive-item">
-                    <span class="archive-date">{{formatDate .PublishedAt}}</span>
-                    <a class="archive-title" href="/post/{{.Slug}}">{{.Title}}</a>
+            <!-- 致敬 XHBlogs：归档统计概览卡 -->
+            <div class="glass-card archive-overview">
+                <div class="glow-orb glow-orb-pink" style="width:140px;height:140px;top:-40px;right:-30px;"></div>
+                <span class="bento-label">ARCHIVE OVERVIEW</span>
+                <div class="archive-overview-stats">
+                    <div class="archive-stat">
+                        <span class="archive-stat-value">{{len .Posts}}</span>
+                        <span class="archive-stat-label">总文章</span>
+                    </div>
+                    <div class="archive-stat">
+                        <span class="archive-stat-value">{{len .ArchiveGroups}}</span>
+                        <span class="archive-stat-label">年份</span>
+                    </div>
+                    <div class="archive-stat">
+                        <span class="archive-stat-value">{{.Stats.Views}}</span>
+                        <span class="archive-stat-label">总浏览</span>
+                    </div>
+                </div>
+            </div>
+
+            {{if .ArchiveGroups}}
+            <div class="archive-timeline">
+                {{range .ArchiveGroups}}
+                <div class="archive-year-group">
+                    <div class="archive-year-marker">
+                        <span class="archive-year-dot"></span>
+                        <h2 class="archive-year-text">{{.Year}}</h2>
+                        <span class="archive-year-count">{{len .Posts}} 篇</span>
+                    </div>
+                    <div class="archive-year-body">
+                        {{range .Posts}}
+                        <a class="archive-row" href="/post/{{.Slug}}">
+                            <span class="archive-row-date">{{formatDate .PublishedAt}}</span>
+                            <span class="archive-row-title">{{.Title}}</span>
+                            {{if .Summary}}
+                            <span class="archive-row-summary">{{.Summary}}</span>
+                            {{end}}
+                            <span class="archive-row-views">{{.Views}} views</span>
+                        </a>
+                        {{end}}
+                    </div>
                 </div>
                 {{end}}
             </div>
+            {{else}}
+            <div class="glass-card">
+                <p class="muted">还没有文章归档。</p>
+            </div>
+            {{end}}
         </section>
     </main>
     {{template "footer" .}}

@@ -1,4 +1,4 @@
-﻿{{define "admin_login"}}
+{{define "admin_login"}}
 <!doctype html>
 <html lang="zh-CN">
 {{template "admin_head" .}}
@@ -7,7 +7,7 @@
         <div class="login-hero">
             <span class="login-mark"></span>
             <div class="login-hero-text">
-                <span class="hero-title">{{.Site.Title}}</span>
+                <span class="hero-title">Blog</span>
                 <span class="hero-sub">后台登录</span>
             </div>
         </div>
@@ -28,9 +28,6 @@
                 </label>
                 <button type="submit">登录</button>
             </form>
-            <div class="login-tip">
-                <p>默认账号：环境变量 BLOG_ADMIN_USER / BLOG_ADMIN_PASS</p>
-            </div>
         </div>
     </div>
 </body>

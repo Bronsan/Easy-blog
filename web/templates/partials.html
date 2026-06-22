@@ -1,22 +1,42 @@
-﻿{{define "head"}}
+{{define "head"}}
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{.Site.Title}}</title>
-    <link rel="stylesheet" href="/static/css/main.css">
+    <title>{{if .SEOTitle}}{{.SEOTitle}}{{else}}{{.Site.Title}}{{end}}</title>
+    <meta name="description" content="{{if .SEODescription}}{{.SEODescription}}{{else}}{{.Site.Subtitle}}{{end}}">
+    {{if .SEOKeywords}}<meta name="keywords" content="{{.SEOKeywords}}">{{end}}
+    {{if .SEOCanonical}}<link rel="canonical" href="{{.SEOCanonical}}">{{end}}
+
+    <!-- Open Graph -->
+    <meta property="og:site_name" content="{{.Site.Title}}">
+    <meta property="og:title" content="{{if .SEOTitle}}{{.SEOTitle}}{{else}}{{.Site.Title}}{{end}}">
+    <meta property="og:description" content="{{if .SEODescription}}{{.SEODescription}}{{else}}{{.Site.Subtitle}}{{end}}">
+    <meta property="og:type" content="{{if .SEOOGType}}{{.SEOOGType}}{{else}}website{{end}}">
+    {{if .SEOCanonical}}<meta property="og:url" content="{{.SEOCanonical}}">{{end}}
+    {{if .SEOOGImage}}<meta property="og:image" content="{{.SEOOGImage}}">{{end}}
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{if .SEOTitle}}{{.SEOTitle}}{{else}}{{.Site.Title}}{{end}}">
+    <meta name="twitter:description" content="{{if .SEODescription}}{{.SEODescription}}{{else}}{{.Site.Subtitle}}{{end}}">
+    {{if .SEOOGImage}}<meta name="twitter:image" content="{{.SEOOGImage}}">{{end}}
+
+    <link rel="stylesheet" href="/static/css/main.css?v=11">
     <link rel="icon" href="/static/img/favicon.svg">
+    <script src="/static/js/app.js?v=11" defer></script>
     <style>
-        :root { --site-bg: {{if .SiteBackgroundCSS}}{{.SiteBackgroundCSS}}{{else}}url('/static/img/paper-bg.svg') center top / cover no-repeat fixed{{end}}; }
+        :root {
+            --site-bg: {{if .SiteBackgroundCSS}}{{.SiteBackgroundCSS}}{{else}}url('/static/img/paper-bg.svg') center top / cover no-repeat fixed{{end}};
+            --site-bg-blur: {{if .SiteBackgroundBlur}}{{.SiteBackgroundBlur}}{{else}}0{{end}}px;
+        }
     </style>
 </head>
 {{end}}
 
 {{define "site_nav"}}
 <nav class="top-nav">
-    <div class="nav-logo">
-        <span class="logo-title">{{.Site.Title}}</span>
-        <span class="logo-sub">{{.Site.Subtitle}}</span>
-    </div>
+    <div class="nav-logo"></div>
+    <button class="nav-toggle" id="navToggle" aria-label="菜单" aria-expanded="false">☰</button>
     <div class="nav-links">
         <a class="{{if eq .Nav "home"}}active{{end}}" href="/">首页</a>
         <a class="{{if eq .Nav "archive"}}active{{end}}" href="/archive">归档</a>
@@ -55,46 +75,64 @@
         <h3>每日一言</h3>
         <p>{{index .Settings "daily_quote"}}</p>
     </div>
+    <div class="panel panel-hot">
+        <h3>热门文章</h3>
+        {{if .HotPosts}}
+        <ul class="hot-list">
+            {{range $i, $p := .HotPosts}}
+            <li>
+                <a href="/post/{{$p.Slug}}">
+                    <span class="hot-rank">{{add $i 1}}</span>
+                    <span>
+                        <span class="hot-title">{{$p.Title}}</span>
+                        <span class="hot-views">{{$p.Views}} views</span>
+                    </span>
+                </a>
+            </li>
+            {{end}}
+        </ul>
+        {{else}}
+        <p class="muted">暂无热门文章。</p>
+        {{end}}
+    </div>
     <div class="panel panel-author">
         <img class="avatar" src="{{if and .User .User.AvatarURL}}{{.User.AvatarURL}}{{else}}{{index .Settings "avatar_url"}}{{end}}" alt="头像">
         <p class="author-name">{{.SidebarName}}</p>
         <div class="author-stats">
-            <div>
+            <div class="stat-cell">
                 <span class="stat-value">{{.SidebarPosts}}</span>
                 <span class="stat-label">文章</span>
             </div>
-            <div>
+            <div class="stat-cell">
                 <span class="stat-value">{{.SidebarPages}}</span>
                 <span class="stat-label">页面</span>
             </div>
-            <div>
+            <div class="stat-cell">
                 <span class="stat-value">{{.SidebarViews}}</span>
                 <span class="stat-label">浏览</span>
             </div>
         </div>
     </div>
+    {{if .ArchiveGroups}}
+    <div class="panel panel-archive-calendar">
+        <h3>归档日历</h3>
+        <div class="archive-cal-grid">
+            {{range .ArchiveGroups}}
+            <a class="archive-cal-cell" href="/archive">
+                <span class="archive-cal-cell-year">{{.Year}}</span>
+                <span class="archive-cal-cell-count">{{len .Posts}} 篇</span>
+            </a>
+            {{end}}
+        </div>
+    </div>
+    {{end}}
 </aside>
 {{end}}
 
 {{define "footer"}}
-<footer class="site-footer">
-    <div class="footer-inner">
-        {{if or .Site.ICP .Site.Gongan}}
-        <div class="footer-badges">
-            {{if .Site.ICP}}
-            <span>备案号 {{.Site.ICP}}</span>
-            {{end}}
-            {{if .Site.Gongan}}
-            <span>{{.Site.Gongan}}</span>
-            {{end}}
-        </div>
-        {{end}}
-        <div class="footer-meta">
-            <span>{{.Site.Footer}}</span>
-            <span>Copyright {{year}} © :)</span>
-        </div>
-    </div>
-</footer>
+<canvas class="firefly-canvas" aria-hidden="true"></canvas>
+<div class="reading-progress" aria-hidden="true"></div>
+<button class="back-to-top" type="button" aria-label="返回顶部">↑</button>
 {{end}}
 
 {{define "admin_head"}}
@@ -102,10 +140,13 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>后台管理 - {{.Site.Title}}</title>
-    <link rel="stylesheet" href="/static/css/admin.css">
+    <link rel="stylesheet" href="/static/css/admin.css?v=2">
     <link rel="icon" href="/static/img/favicon.svg">
     <style>
-        :root { --admin-bg: {{if .AdminBackgroundCSS}}{{.AdminBackgroundCSS}}{{else}}linear-gradient(180deg, #f6f6f2, #eceff3){{end}}; }
+        :root {
+            --admin-bg: {{if .AdminBackgroundCSS}}{{.AdminBackgroundCSS}}{{else}}linear-gradient(180deg, #f6f6f2, #eceff3){{end}};
+            --admin-bg-blur: {{if .AdminBackgroundBlur}}{{.AdminBackgroundBlur}}{{else}}0{{end}}px;
+        }
     </style>
 </head>
 {{end}}
@@ -113,8 +154,7 @@
 {{define "admin_nav"}}
 <nav class="admin-nav">
     <div class="admin-brand">
-        <span>{{.Site.Title}} 后台</span>
-        <small>Go + SQLite</small>
+        <span>后台</span>
     </div>
     <div class="admin-links">
         {{if .CanManageContent}}
@@ -126,10 +166,12 @@
         {{end}}
         {{if .CanManageUsers}}
         <a class="{{if eq .Nav "admin-users"}}active{{end}}" href="/admin/users">用户</a>
+        <a class="{{if eq .Nav "admin-sessions"}}active{{end}}" href="/admin/sessions">会话</a>
         {{end}}
     </div>
     <div class="admin-account">
         <span>{{if .User}}{{.User.DisplayName}} · {{if eq .User.Role "owner"}}站长{{else if eq .User.Role "maintainer"}}维护{{else}}访问者{{end}}{{end}}</span>
+        <a href="/">返回前台</a>
         <a href="/admin/logout">退出</a>
     </div>
 </nav>
@@ -138,8 +180,7 @@
 {{define "member_nav"}}
 <nav class="admin-nav">
     <div class="admin-brand">
-        <span>{{.Site.Title}} 访问者后台</span>
-        <small>仅管理我自己的内容</small>
+        <span>后台</span>
     </div>
     <div class="admin-links">
         <a class="{{if eq .Nav "member-profile"}}active{{end}}" href="/member">个人设置</a>
@@ -152,6 +193,7 @@
     </div>
     <div class="admin-account">
         <span>{{if .User}}{{.User.DisplayName}}{{end}}</span>
+        <a href="/">返回前台</a>
         <a href="/admin/logout">退出</a>
     </div>
 </nav>

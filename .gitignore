@@ -8,6 +8,8 @@
 # Local debug/temp files
 /_tmp_*
 /tmp_*.go
+/%TEMP%/
+*.exe~
 
 # Environment and build outputs
 /.env

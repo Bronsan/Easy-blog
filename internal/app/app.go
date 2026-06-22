@@ -41,11 +41,18 @@ type ViewData struct {
 	// 避免被模板安全过滤器降级后导致“背景设置不生效”。
 	SiteBackgroundCSS  template.CSS
 	AdminBackgroundCSS template.CSS
-	User               *data.User
+	// SiteBackgroundBlur / AdminBackgroundBlur 为高斯模糊像素值（0-30）。
+	SiteBackgroundBlur  string
+	AdminBackgroundBlur string
+	User                *data.User
 
 	Posts []data.Post
 	Post  *data.Post
 	Pages []data.Post
+	// HotPosts 按浏览量倒序的热门文章，供侧栏/首页“热门”模块使用。
+	HotPosts []data.Post
+	// Whispers 最近公开留言，作为首页“碎碎念/动态”模块的数据源。
+	Whispers []data.Comment
 	Users []data.User
 	// SelectedUser 用于“用户管理”页展示当前点开的用户详细信息。
 	SelectedUser *data.User
@@ -57,6 +64,7 @@ type ViewData struct {
 	AuditLogs          []data.AuditLog
 	Notifications      []data.Notification
 	Sessions           []data.SessionInfo
+	AdminSessions      []data.AdminSessionInfo
 	CommentFormName    string
 	CommentFormContent string
 	CommentAnonymous   bool
@@ -89,6 +97,24 @@ type ViewData struct {
 
 	// PostAuthors 用于前台列表按文章作者 ID 显示“发布者名称”。
 	PostAuthors map[int64]string
+
+	// ArchiveGroups 按年份分组的归档数据，供归档页时间轴展示。
+	ArchiveGroups []ArchiveGroup
+
+	// SEO 相关字段：用于差异化 title、meta description、Open Graph、canonical。
+	// 为空时模板会回退到站点默认值。
+	SEOTitle       string
+	SEODescription string
+	SEOCanonical   string
+	SEOOGType      string // og:type，文章页为 article，其余为 website
+	SEOOGImage     string // og:image，文章封面或站点默认图
+	SEOKeywords    string
+}
+
+// ArchiveGroup 表示归档页中一个年份下的文章分组。
+type ArchiveGroup struct {
+	Year  string
+	Posts []data.Post
 }
 
 // Stats 后台统计数据。
@@ -144,10 +170,13 @@ func New(cfg Config) *App {
 func (a *App) Routes() http.Handler {
 	mux := http.NewServeMux()
 
-	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir(a.staticDir))))
+	// 静态资源：配合 ?v=N 版本号实现强缓存（1 年），浏览器无需重复请求。
+	// 文件内容变更时通过模板中的版本号破缓存。
+	mux.Handle("/static/", http.StripPrefix("/static/", cacheStaticHandler(http.FileServer(http.Dir(a.staticDir)))))
 
 	mux.HandleFunc("/", a.handleHome)
 	mux.HandleFunc("/post/", a.handlePost)
+	mux.HandleFunc("/post/like", a.handlePostLike)
 	mux.HandleFunc("/archive", a.handleArchive)
 	mux.HandleFunc("/page/", a.handlePage)
 	mux.HandleFunc("/about", a.handlePageAlias("about"))
@@ -164,6 +193,10 @@ func (a *App) Routes() http.Handler {
 	mux.HandleFunc("/forgot-password", a.handleForgotPassword)
 	mux.HandleFunc("/reset-password", a.handleResetPassword)
 	mux.HandleFunc("/logout", a.handleUserLogout)
+
+	// SEO：sitemap.xml 与 robots.txt 动态生成，反映最新文章与页面。
+	mux.HandleFunc("/sitemap.xml", a.handleSitemap)
+	mux.HandleFunc("/robots.txt", a.handleRobots)
 
 	mux.HandleFunc("/admin/login", a.handleAdminLogin)
 	mux.HandleFunc("/admin/logout", a.handleAdminLogout)
@@ -189,6 +222,7 @@ func (a *App) Routes() http.Handler {
 	mux.HandleFunc("/admin/avatar-reviews", a.requireRoles(data.RoleOwner, data.RoleMaintainer)(a.handleAdminAvatarReviews))
 	mux.HandleFunc("/admin/reports", a.requireRoles(data.RoleOwner, data.RoleMaintainer)(a.handleAdminReports))
 	mux.HandleFunc("/admin/users", a.requireRoles(data.RoleOwner)(a.handleAdminUsers))
+	mux.HandleFunc("/admin/sessions", a.requireRoles(data.RoleOwner)(a.handleAdminSessions))
 
 	mux.HandleFunc("/member", a.requireRoles(data.RoleVisitor)(a.handleMemberProfile))
 	mux.HandleFunc("/member/posts", a.requireRoles(data.RoleVisitor)(a.handleMemberPosts))

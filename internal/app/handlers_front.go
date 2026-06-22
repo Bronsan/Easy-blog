@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -119,9 +120,26 @@ func (a *App) handleArchive(w http.ResponseWriter, r *http.Request) {
 	}
 	pages, _ := a.store.ListPages()
 
+	// 按年份分组，用于时间轴展示。
+	// ListPosts 默认按发布时间倒序，因此年份也呈倒序排列。
+	var groups []ArchiveGroup
+	var curYear string
+	for _, p := range posts {
+		y := p.PublishedAt.Format("2006")
+		if y == "" || y == "0001" {
+			y = "未归类"
+		}
+		if y != curYear {
+			groups = append(groups, ArchiveGroup{Year: y})
+			curYear = y
+		}
+		groups[len(groups)-1].Posts = append(groups[len(groups)-1].Posts, p)
+	}
+
 	data := a.baseData(r, "archive")
 	data.Posts = posts
 	data.Pages = pages
+	data.ArchiveGroups = groups
 
 	a.renderTemplate(w, "archive", data)
 }
@@ -141,12 +159,30 @@ func (a *App) handlePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_ = a.store.IncrementViews(post.ID)
+	// 浏览量去重：同一会话 24 小时内对同一文章只计 1 次浏览。
+	// 通过 Cookie 标记已浏览的文章 ID，避免刷新涨量。
+	if !hasViewedRecently(r, post.ID) {
+		_ = a.store.IncrementViews(post.ID)
+		markViewed(w, r, post.ID)
+	}
+
 	pages, _ := a.store.ListPages()
 
 	viewData := a.baseData(r, "post")
 	viewData.Post = post
 	viewData.Pages = pages
+	// SEO：文章页使用"文章标题 - 站名"格式，description 用摘要，canonical 指向规范 URL。
+	viewData.SEOTitle = post.Title + " - " + a.site.Title
+	if strings.TrimSpace(post.Summary) != "" {
+		viewData.SEODescription = post.Summary
+	} else {
+		viewData.SEODescription = a.site.Subtitle
+	}
+	viewData.SEOCanonical = "/post/" + post.Slug
+	viewData.SEOOGType = "article"
+	if post.CoverURL != "" {
+		viewData.SEOOGImage = post.CoverURL
+	}
 	if strings.TrimSpace(r.URL.Query().Get("ok")) == "report" {
 		viewData.Flash = "Report submitted."
 	}
@@ -155,6 +191,40 @@ func (a *App) handlePost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	a.renderTemplate(w, "post", viewData)
+}
+
+// handlePostLike 处理文章点赞切换（AJAX JSON 接口）。
+func (a *App) handlePostLike(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	cu, cerr := a.currentUser(r)
+	if cerr != nil || cu == nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`{"ok":false,"error":"请先登录"}`))
+		return
+	}
+	if err := r.ParseForm(); err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`{"ok":false,"error":"invalid form"}`))
+		return
+	}
+	postID := strings.TrimSpace(r.FormValue("post_id"))
+	id, parseErr := strconv.ParseInt(postID, 10, 64)
+	if parseErr != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`{"ok":false,"error":"invalid post_id"}`))
+		return
+	}
+	count, liked, err := a.store.ToggleLike(id, cu.ID)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`{"ok":false,"error":"` + err.Error() + `"}`))
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	fmt.Fprintf(w, `{"ok":true,"count":%d,"liked":%v}`, count, liked)
 }
 
 // handlePage 根据 slug 渲染公开页面。
@@ -519,7 +589,7 @@ func (a *App) handleUserLogin(w http.ResponseWriter, r *http.Request) {
 
 		a.authLimiter.onSuccess(ip)
 		_ = a.store.UpdateLastLogin(user.ID, ip)
-		setSessionCookie(w, sessionID, expiresAt)
+		setSessionCookie(w, r, sessionID, expiresAt)
 		http.Redirect(w, r, nextPath, http.StatusFound)
 		return
 	default:
@@ -611,7 +681,7 @@ func (a *App) handleUserRegister(w http.ResponseWriter, r *http.Request) {
 			a.renderTemplate(w, "register", viewData)
 			return
 		}
-		setSessionCookie(w, sessionID, expiresAt)
+		setSessionCookie(w, r, sessionID, expiresAt)
 		http.Redirect(w, r, "/", http.StatusFound)
 		return
 	default:
@@ -629,7 +699,7 @@ func (a *App) handleUserLogout(w http.ResponseWriter, r *http.Request) {
 	if cookie, err := r.Cookie(sessionCookieName); err == nil {
 		_ = a.store.DeleteSession(cookie.Value)
 	}
-	clearSessionCookie(w)
+	clearSessionCookie(w, r)
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 

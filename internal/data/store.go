@@ -1279,6 +1279,54 @@ func (s *Store) ListPages() ([]Post, error) {
 	return scanPosts(rows)
 }
 
+// ListTopPosts 按浏览量倒序返回热门文章，用于首页/侧栏“热门文章”模块。
+func (s *Store) ListTopPosts(kind string, limit int) ([]Post, error) {
+	defer s.logSlow("ListTopPosts", time.Now())
+
+	if limit <= 0 {
+		limit = 5
+	}
+	rows, err := s.db.Query(
+		`SELECT id, title, slug, summary, content, kind, cover_url, published_at, updated_at, author_id, sort_order, is_public, views
+		 FROM posts
+		 WHERE kind = ? AND is_public = 1 AND views > 0
+		 ORDER BY views DESC, published_at DESC
+		 LIMIT ?;`,
+		kind,
+		limit,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("store error: %w", err)
+	}
+	defer rows.Close()
+	return scanPosts(rows)
+}
+
+// ListRecentComments 跨文章返回最近的公开留言，用于首页“碎碎念/动态”模块。
+// 匿名留言在展示时由调用方决定是否脱敏。
+func (s *Store) ListRecentComments(limit int) ([]Comment, error) {
+	defer s.logSlow("ListRecentComments", time.Now())
+
+	if limit <= 0 {
+		limit = 5
+	}
+	rows, err := s.db.Query(
+		`SELECT c.id, c.post_id, c.user_id, c.author, c.content, c.ip, c.is_anonymous, c.is_hidden, c.likes, c.dislikes, c.created_at,
+				COALESCE(u.avatar_url, '')
+		 FROM comments c
+		 LEFT JOIN users u ON u.id = c.user_id
+		 WHERE c.is_hidden = 0
+		 ORDER BY c.created_at DESC
+		 LIMIT ?;`,
+		limit,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("store error: %w", err)
+	}
+	defer rows.Close()
+	return scanComments(rows)
+}
+
 // SearchPosts 搜索文章。
 func (s *Store) SearchPosts(keyword string) ([]Post, error) {
 	defer s.logSlow("SearchPosts", time.Now())
@@ -1806,10 +1854,19 @@ func scanAvatarRequests(rows *sql.Rows) ([]AvatarRequest, error) {
 	return result, nil
 }
 
+// slugify 将标题转换为 URL 友好的 slug。
+// 规则：
+// 1) 小写化 + 空格转连字符；
+// 2) 保留中文、字母、数字、连字符（支持中文 slug，利于 SEO）；
+// 3) 其他字符移除；
+// 4) 连续连字符合并为单个，首尾连字符去除。
 func slugify(title string) string {
 	lower := strings.ToLower(strings.TrimSpace(title))
 	lower = strings.ReplaceAll(lower, " ", "-")
-	lower = regexp.MustCompile(`[^a-z0-9\-]`).ReplaceAllString(lower, "")
+	// 保留中文范围 \u4e00-\u9fff、a-z、0-9、连字符
+	lower = regexp.MustCompile(`[^\u4e00-\u9fffa-z0-9\-]`).ReplaceAllString(lower, "")
+	// 合并连续连字符
+	lower = regexp.MustCompile(`-+`).ReplaceAllString(lower, "-")
 	lower = strings.Trim(lower, "-")
 	return lower
 }
@@ -1893,6 +1950,11 @@ func (s *Store) logSlow(op string, start time.Time) {
 	if elapsed >= s.slowQueryThreshold {
 		log.Printf("[WARN] slow query op=%s elapsed=%s", op, elapsed.String())
 	}
+}
+
+// HashPasswordForReset 导出密码哈希函数，供命令行工具重置密码使用。
+func HashPasswordForReset(password string) (string, error) {
+	return hashPasswordArgon2id(password)
 }
 
 // hashPasswordArgon2id 使用 Argon2id 生成密码哈希。
@@ -2120,6 +2182,25 @@ func (s *Store) applyMigrations() error {
 			},
 		},
 	}
+
+	// 追加: 文章点赞表 v6
+	postLikesMigration := schemaMigration{
+		version: 6,
+		name:    "create_post_likes",
+		stmts: []string{
+			`CREATE TABLE IF NOT EXISTS post_likes (
+				id INTEGER PRIMARY KEY AUTOINCREMENT,
+				post_id INTEGER NOT NULL,
+				user_id INTEGER NOT NULL,
+				created_at INTEGER NOT NULL DEFAULT (strftime('%s','now')),
+				UNIQUE(post_id, user_id),
+				FOREIGN KEY(post_id) REFERENCES posts(id) ON DELETE CASCADE,
+				FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+			);`,
+			`CREATE INDEX IF NOT EXISTS idx_post_likes_post ON post_likes (post_id);`,
+		},
+	}
+	migrations = append(migrations, postLikesMigration)
 
 	for _, m := range migrations {
 		var count int
@@ -2618,6 +2699,40 @@ func (s *Store) ListSessionsByUser(userID int64) ([]SessionInfo, error) {
 	return list, nil
 }
 
+// ListAllSessions 返回所有用户的会话记录（关联用户名），供站长后台查看。
+func (s *Store) ListAllSessions(limit int) ([]AdminSessionInfo, error) {
+	defer s.logSlow("ListAllSessions", time.Now())
+
+	if limit <= 0 {
+		limit = 100
+	}
+	rows, err := s.db.Query(
+		`SELECT s.id, s.user_id, u.username, u.display_name, s.ip, s.user_agent, s.created_at, s.expires_at
+		 FROM sessions s
+		 LEFT JOIN users u ON u.id = s.user_id
+		 ORDER BY s.created_at DESC
+		 LIMIT ?;`,
+		limit,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("list all sessions: %w", err)
+	}
+	defer rows.Close()
+
+	var list []AdminSessionInfo
+	for rows.Next() {
+		var item AdminSessionInfo
+		var createdAt, expiresAt int64
+		if err := rows.Scan(&item.ID, &item.UserID, &item.Username, &item.DisplayName, &item.IP, &item.UserAgent, &createdAt, &expiresAt); err != nil {
+			return nil, fmt.Errorf("scan all sessions: %w", err)
+		}
+		item.CreatedAt = unixToTime(createdAt)
+		item.ExpiresAt = unixToTime(expiresAt)
+		list = append(list, item)
+	}
+	return list, nil
+}
+
 func (s *Store) DeleteSessionByUser(sessionID string, userID int64) error {
 	sessionID = strings.TrimSpace(sessionID)
 	if sessionID == "" || userID == 0 {
@@ -2811,4 +2926,35 @@ func (s *Store) VerifyEmailByToken(token string) (int64, string, error) {
 		return 0, "", fmt.Errorf("commit email verification transaction: %w", err)
 	}
 	return userID, email, nil
+}
+
+// ToggleLike 切换点赞状态，返回当前点赞数和是否已点赞。
+func (s *Store) ToggleLike(postID, userID int64) (count int64, liked bool, err error) {
+	tx, err := s.db.Begin()
+	if err != nil {
+		return 0, false, fmt.Errorf("begin toggle like: %w", err)
+	}
+	defer tx.Rollback()
+
+	var exists int64
+	tx.QueryRow(`SELECT COUNT(1) FROM post_likes WHERE post_id = ? AND user_id = ?;`, postID, userID).Scan(&exists)
+
+	if exists > 0 {
+		if _, err := tx.Exec(`DELETE FROM post_likes WHERE post_id = ? AND user_id = ?;`, postID, userID); err != nil {
+			return 0, false, fmt.Errorf("remove like: %w", err)
+		}
+		liked = false
+	} else {
+		if _, err := tx.Exec(`INSERT INTO post_likes(post_id, user_id) VALUES(?, ?);`, postID, userID); err != nil {
+			return 0, false, fmt.Errorf("add like: %w", err)
+		}
+		liked = true
+	}
+
+	tx.QueryRow(`SELECT COUNT(1) FROM post_likes WHERE post_id = ?;`, postID).Scan(&count)
+
+	if err := tx.Commit(); err != nil {
+		return 0, false, fmt.Errorf("commit toggle like: %w", err)
+	}
+	return count, liked, nil
 }

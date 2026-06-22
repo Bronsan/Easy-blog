@@ -1,4 +1,4 @@
-﻿{{define "admin_appearance"}}
+{{define "admin_appearance"}}
 <!doctype html>
 <html lang="zh-CN">
 {{template "admin_head" .}}
@@ -6,6 +6,8 @@
     {{template "admin_nav" .}}
     {{$siteBg := index .Settings "site_background"}}
     {{$adminBg := index .Settings "admin_background"}}
+    {{$siteBlur := index .Settings "site_background_blur"}}
+    {{$adminBlur := index .Settings "admin_background_blur"}}
     <main class="admin-main">
         <div class="admin-header">
             <div>
@@ -118,6 +120,30 @@
                             <span class="bg-shell"><span class="bg-preview" style="background: url('/static/img/hero-bg.svg') center / cover no-repeat;"></span><span class="bg-name">星云</span></span>
                         </label>
                     </div>
+                </fieldset>
+
+                <fieldset class="bg-fieldset">
+                    <legend>自定义背景与高斯模糊</legend>
+
+                    <h4 class="bg-group-title">自定义图片 URL（https 链接，留空则使用上方选择）</h4>
+                    <label class="bg-url-label">
+                        <span>前台背景 URL</span>
+                        <input type="url" name="site_background_url" placeholder="https://example.com/bg.jpg" value="">
+                    </label>
+                    <label class="bg-url-label">
+                        <span>后台背景 URL</span>
+                        <input type="url" name="admin_background_url" placeholder="https://example.com/bg.jpg" value="">
+                    </label>
+
+                    <h4 class="bg-group-title">高斯模糊</h4>
+                    <label class="bg-blur-label">
+                        <span>前台背景模糊：<b class="blur-value" id="siteBlurValue">{{if $siteBlur}}{{$siteBlur}}{{else}}0{{end}}</b> px</span>
+                        <input type="range" name="site_background_blur" min="0" max="30" step="1" value="{{if $siteBlur}}{{$siteBlur}}{{else}}0{{end}}" oninput="document.getElementById('siteBlurValue').textContent=this.value">
+                    </label>
+                    <label class="bg-blur-label">
+                        <span>后台背景模糊：<b class="blur-value" id="adminBlurValue">{{if $adminBlur}}{{$adminBlur}}{{else}}0{{end}}</b> px</span>
+                        <input type="range" name="admin_background_blur" min="0" max="30" step="1" value="{{if $adminBlur}}{{$adminBlur}}{{else}}0{{end}}" oninput="document.getElementById('adminBlurValue').textContent=this.value">
+                    </label>
                 </fieldset>
 
                 <div class="form-actions">
